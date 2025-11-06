@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd"
 import { Button } from "@/components/ui/button"
-import { Trash2, Plus, Settings as SettingsIcon, GripVertical, Copy, Check, Eye, Edit, ChevronUp, ChevronDown, Code, Smartphone } from "lucide-react"
+import { Trash2, Plus, Settings as SettingsIcon, GripVertical, Copy, Check, Eye, Edit, ChevronUp, ChevronDown, Code, Smartphone, FileCode } from "lucide-react"
 import { ComponentDialog } from "@/components/component-dialog"
 import { AddComponentDialog } from "@/components/add-component-dialog"
 import { MobileTutorialDialog } from "@/components/mobile-tutorial-dialog"
+import { AssetsDialog } from "@/components/assets-dialog"
 import { AssetRegistry } from "@/lib/asset-registry"
 import { PreviewAssetRegistry } from "@/lib/preview-asset-registry"
 import { ComponentRegistry } from "@/lib/component-registry"
@@ -14,6 +15,7 @@ import { generateHTML, parseComponents, cleanPastedCode } from "@/lib/html-gener
 import type { Component } from "@/types/component"
 import type { Settings } from "@/types/settings"
 import { ShowroomSettingsDialog } from "@/components/showroom-settings-dialog"
+import { ModelConverterDialog } from "@/components/model-converter-dialog"
 import Cookies from "js-cookie"
 import { settingsModel } from "@/lib/settings-model"
 
@@ -37,6 +39,8 @@ export default function WebPageBuilder() {
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showSettingsDialog, setShowSettingsDialog] = useState(false)
   const [showMobileTutorial, setShowMobileTutorial] = useState(false)
+  const [showAssetsDialog, setShowAssetsDialog] = useState(false)
+  const [showModelConverter, setShowModelConverter] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
   const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set())
   const [hasSettings, setHasSettings] = useState(false)
@@ -323,6 +327,14 @@ export default function WebPageBuilder() {
     })
   }
 
+  const handleAssetsSaved = () => {
+    // Clear and re-inject assets after saving
+    PreviewAssetRegistry.clear()
+    PreviewAssetRegistry.injectDefaultAssets()
+    // Force a re-render by updating a dummy state
+    setComponents([...components])
+  }
+
   const handleShowProducts = () => {
     setShowingProducts(true)
     AssetRegistry.initializeInteractiveComponents()
@@ -419,7 +431,7 @@ export default function WebPageBuilder() {
         </div>
 
         {/* Middle Scrollable Components Area */}
-        <div className="absolute top-20 bottom-16 left-0 right-0 overflow-y-auto">
+        <div className="absolute top-20 bottom-32 left-0 right-0 overflow-y-auto">
           <div className="p-4">
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="components">
@@ -480,19 +492,27 @@ export default function WebPageBuilder() {
         </div>
 
         {/* Bottom Fixed Footer Section */}
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gray-50 border-t p-2 z-10">
-          <Button onClick={handleCopyCode} size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full h-12 text-sm">
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gray-50 border-t p-2 z-10 flex flex-col gap-2">
+          <Button onClick={handleCopyCode} size="sm" className="bg-green-600 hover:bg-green-700 text-white w-full h-8 text-xs">
             {copiedCode ? (
               <>
-                <Check className="w-4 h-4 mr-1" />
+                <Check className="w-3 h-3 mr-1" />
                 <span className="hidden sm:inline">Copied!</span>
               </>
             ) : (
               <>
-                <Copy className="w-4 h-4 mr-1" />
+                <Copy className="w-3 h-3 mr-1" />
                 <span className="hidden sm:inline">Copy Code</span>
               </>
             )}
+          </Button>
+          <Button onClick={() => setShowAssetsDialog(true)} size="sm" variant="outline" className="w-full h-8 text-xs">
+            <FileCode className="w-3 h-3 mr-1" />
+            <span className="hidden sm:inline">Scripts & Styles</span>
+          </Button>
+          <Button onClick={() => setShowModelConverter(true)} size="sm" variant="outline" className="w-full h-8 text-xs bg-purple-50 hover:bg-purple-100 border-purple-300">
+            <Code className="w-3 h-3 mr-1" />
+            <span className="hidden sm:inline">Model Converter</span>
           </Button>
         </div>
       </div>
@@ -574,6 +594,17 @@ export default function WebPageBuilder() {
       <ShowroomSettingsDialog
         isOpen={showSettingsDialog}
         onClose={() => setShowSettingsDialog(false)}
+      />
+
+      <AssetsDialog
+        isOpen={showAssetsDialog}
+        onClose={() => setShowAssetsDialog(false)}
+        onSave={handleAssetsSaved}
+      />
+
+      <ModelConverterDialog
+        isOpen={showModelConverter}
+        onClose={() => setShowModelConverter(false)}
       />
 
       <style jsx global>{`

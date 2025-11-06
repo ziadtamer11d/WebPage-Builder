@@ -68,7 +68,7 @@ class PreviewAssetRegistryClass {
     },
     {
       type: "css",
-      url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/Showroom.css",
+      url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/ShowroomFinal.css",
       id: "showroom-css",
     },
     {
@@ -270,8 +270,24 @@ document.addEventListener("alpine:init", () => {
       // Make settings model available globally for preview
       ;(window as any).settingsModel = settingsModel
 
-      // Inject all default assets
-      this.defaultAssets.forEach((asset) => {
+      // Try to load custom assets from localStorage
+      const savedCss = localStorage.getItem("custom_css_assets")
+      const savedJs = localStorage.getItem("custom_js_assets")
+      
+      let assetsToInject: Asset[] = []
+      
+      if (savedCss && savedJs) {
+        // Use saved custom assets
+        const cssAssets = JSON.parse(savedCss)
+        const jsAssets = JSON.parse(savedJs)
+        assetsToInject = [...cssAssets, ...jsAssets]
+      } else {
+        // Use default assets
+        assetsToInject = this.defaultAssets
+      }
+
+      // Inject all assets
+      assetsToInject.forEach((asset) => {
         this.addAsset(asset)
       })
 
@@ -283,6 +299,25 @@ document.addEventListener("alpine:init", () => {
         scriptElement.async = true
         scriptElement.defer = true
         scriptElement.innerHTML = this.customScript.replace(/<script>|<\/script>/g, "")
+        document.head.appendChild(scriptElement)
+      }
+
+      // Inject inline CSS
+      const inlineCss = localStorage.getItem("custom_inline_css")
+      if (inlineCss && !document.getElementById("custom-inline-css")) {
+        const styleElement = document.createElement("style")
+        styleElement.id = "custom-inline-css"
+        styleElement.innerHTML = inlineCss
+        document.head.appendChild(styleElement)
+      }
+
+      // Inject inline JS
+      const inlineJs = localStorage.getItem("custom_inline_js")
+      if (inlineJs && !document.getElementById("custom-inline-js")) {
+        const scriptElement = document.createElement("script")
+        scriptElement.type = "text/javascript"
+        scriptElement.id = "custom-inline-js"
+        scriptElement.innerHTML = inlineJs
         document.head.appendChild(scriptElement)
       }
 
@@ -327,6 +362,14 @@ document.addEventListener("alpine:init", () => {
       const customScript = document.getElementById("custom-script")
       if (customScript) {
         customScript.remove()
+      }
+      const inlineCssElement = document.getElementById("custom-inline-css")
+      if (inlineCssElement) {
+        inlineCssElement.remove()
+      }
+      const inlineJsElement = document.getElementById("custom-inline-js")
+      if (inlineJsElement) {
+        inlineJsElement.remove()
       }
     }
   }

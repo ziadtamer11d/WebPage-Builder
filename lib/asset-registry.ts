@@ -68,7 +68,7 @@ class AssetRegistryClass {
     },
     {
       type: "css",
-      url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/Showroom.css",
+      url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/ShowroomFinal.css",
       id: "showroom-css",
     },
     {
@@ -505,14 +505,26 @@ document.addEventListener("alpine:init", () => {
     const wrappedHtml = `<div id="ZA_body_fix">\n${htmlCode}\n</div>`
 
     // Get all required assets
-    const assets: Asset[] = []
+    let assets: Asset[] = []
 
-    // Add default assets
-    this.defaultAssets.forEach((asset) => {
-      if (!this.hasAsset(asset.id)) {
-        assets.push(asset)
+    // Try to load custom assets from localStorage
+    if (typeof window !== "undefined") {
+      const savedCss = localStorage.getItem("custom_css_assets")
+      const savedJs = localStorage.getItem("custom_js_assets")
+      
+      if (savedCss && savedJs) {
+        // Use saved custom assets
+        const cssAssets = JSON.parse(savedCss)
+        const jsAssets = JSON.parse(savedJs)
+        assets = [...cssAssets, ...jsAssets]
+      } else {
+        // Use default assets
+        assets = [...this.defaultAssets]
       }
-    })
+    } else {
+      // Use default assets (server-side)
+      assets = [...this.defaultAssets]
+    }
 
     // Generate asset HTML
     const assetTags = assets
@@ -541,8 +553,21 @@ document.addEventListener("alpine:init", () => {
       };`
     )
 
-    // Return combined code with assets and custom script at the end
-    return `${wrappedHtml}\n\n${assetTags}\n\n${scriptWithSettings}`
+    // Get inline CSS and JS from localStorage
+    let inlineCss = ""
+    let inlineJs = ""
+    
+    if (typeof window !== "undefined") {
+      inlineCss = localStorage.getItem("custom_inline_css") || ""
+      inlineJs = localStorage.getItem("custom_inline_js") || ""
+    }
+
+    // Build inline style and script tags
+    const inlineStyleTag = inlineCss ? `\n<style>\n${inlineCss}\n</style>` : ""
+    const inlineScriptTag = inlineJs ? `\n<script>\n${inlineJs}\n</script>` : ""
+
+    // Return combined code with assets, custom script, and inline code
+    return `${wrappedHtml}\n\n${assetTags}\n\n${scriptWithSettings}${inlineStyleTag}${inlineScriptTag}`
   }
 
   clear(): void {

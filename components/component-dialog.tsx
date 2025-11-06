@@ -528,60 +528,30 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
               </div>
             </div>
           </div>
-          {config.mode === "image" && (
-            <div>
-              <Label className="mb-2 block">Direction</Label>
-              <div className="relative w-fit rounded-full border bg-muted p-1">
-                <div
-                  className={`absolute transition-all duration-200 ${
-                    !config.direction || config.direction === "ltr" ? "translate-x-0" : "translate-x-full"
-                  } top-1 left-1 h-8 w-[90px] rounded-full bg-background`}
-                />
-                <div className="relative flex">
-                  <button
-                    className={`relative z-10 h-8 w-[90px] rounded-full text-sm transition-colors ${
-                      !config.direction || config.direction === "ltr" ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                    onClick={() => setConfig({ ...config, direction: "ltr" })}
-                  >
-                    LTR
-                  </button>
-                  <button
-                    className={`relative z-10 h-8 w-[90px] rounded-full text-sm transition-colors ${
-                      config.direction === "rtl" ? "text-foreground" : "text-muted-foreground"
-                    }`}
-                    onClick={() => setConfig({ ...config, direction: "rtl" })}
-                  >
-                    RTL
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
           <div>
-            <Label className="mb-2 block">Sale Mode</Label>
+            <Label className="mb-2 block">Direction</Label>
             <div className="relative w-fit rounded-full border bg-muted p-1">
               <div
                 className={`absolute transition-all duration-200 ${
-                  config.sale === "no" ? "translate-x-0" : "translate-x-full"
+                  !config.direction || config.direction === "ltr" ? "translate-x-0" : "translate-x-full"
                 } top-1 left-1 h-8 w-[90px] rounded-full bg-background`}
               />
               <div className="relative flex">
                 <button
                   className={`relative z-10 h-8 w-[90px] rounded-full text-sm transition-colors ${
-                    config.sale === "no" ? "text-foreground" : "text-muted-foreground"
+                    !config.direction || config.direction === "ltr" ? "text-foreground" : "text-muted-foreground"
                   }`}
-                  onClick={() => setConfig({ ...config, sale: "no" })}
+                  onClick={() => setConfig({ ...config, direction: "ltr" })}
                 >
-                  Regular
+                  LTR
                 </button>
                 <button
                   className={`relative z-10 h-8 w-[90px] rounded-full text-sm transition-colors ${
-                    config.sale === "yes" ? "text-foreground" : "text-muted-foreground"
+                    config.direction === "rtl" ? "text-foreground" : "text-muted-foreground"
                   }`}
-                  onClick={() => setConfig({ ...config, sale: "yes" })}
+                  onClick={() => setConfig({ ...config, direction: "rtl" })}
                 >
-                  Sale
+                  RTL
                 </button>
               </div>
             </div>

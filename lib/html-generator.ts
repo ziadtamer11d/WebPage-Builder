@@ -328,17 +328,29 @@ function extractComponentConfig(html: string, type: string): any {
       } else {
         const bannerConfig: any = {}
         
-        const bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
-        bannerConfig.linkUrl = bannerLinkMatch ? bannerLinkMatch[1] : ""
+        // Try to extract from x-data attribute first
+        const xDataMatch = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
+        const xDataMobileMatch = html.match(/x-data=["'][^"']*mobileBannerImage:\s*['"]([^'"]*)['"]/);
+        const xDataAltMatch = html.match(/x-data=["'][^"']*bannerAlt:\s*['"]([^'"]*)['"]/);
         
-        const desktopImageMatch = html.match(/showroom-desktop-banner[\s\S]*?<img[^>]*alt="([^"]*)"[^>]*src="([^"]*)"[^>]*class="showroom-banner-image"/);
-        if (desktopImageMatch) {
-          bannerConfig.altText = desktopImageMatch[1]
-          bannerConfig.desktopImage = desktopImageMatch[2]
+        if (xDataMatch || xDataMobileMatch) {
+          bannerConfig.desktopImage = xDataMatch ? xDataMatch[1] : ""
+          bannerConfig.mobileImage = xDataMobileMatch ? xDataMobileMatch[1] : bannerConfig.desktopImage
+          bannerConfig.altText = xDataAltMatch ? xDataAltMatch[1] : ""
+        } else {
+          // Fallback to parsing from img tags
+          const desktopImageMatch = html.match(/showroom-desktop-banner[\s\S]*?<img[^>]*:?alt="([^"]*)"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
+          if (desktopImageMatch) {
+            bannerConfig.altText = desktopImageMatch[1]
+            bannerConfig.desktopImage = desktopImageMatch[2]
+          }
+          
+          const mobileImageMatch = html.match(/showroom-mobile-banner[\s\S]*?<img[^>]*:?alt="[^"]*"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
+          bannerConfig.mobileImage = mobileImageMatch ? mobileImageMatch[1] : bannerConfig.desktopImage
         }
         
-        const mobileImageMatch = html.match(/showroom-mobile-banner[\s\S]*?<img[^>]*alt="[^"]*"[^>]*src="([^"]*)"[^>]*class="showroom-banner-image"/);
-        bannerConfig.mobileImage = mobileImageMatch ? mobileImageMatch[1] : bannerConfig.desktopImage
+        const bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
+        bannerConfig.linkUrl = bannerLinkMatch ? bannerLinkMatch[1] : ""
         
         config.bannerConfig = bannerConfig
       }
@@ -353,30 +365,19 @@ function extractComponentConfig(html: string, type: string): any {
           .map(id => id.replace(/['"]/g, ''))
           .join(',') : ""
       } else {
-        // Try to match getDiscountedProductsFromCategory
-        intersectMatch = html.match(/x-intersect[^"]*"[^"]*getDiscountedProductsFromCategory\((\d+),\s*['"]?(\d+)['"]?(?:,\s*\[(.*?)\])?\)/);
+        // Try to match getProductsManual
+        intersectMatch = html.match(/x-intersect[^"]*"[^"]*getProductsManual\(\[(.*?)\]\)/);
         if (intersectMatch) {
-          config.categoryNumber = intersectMatch[2]
-          config.objectIds = intersectMatch[3] ? intersectMatch[3].split(',')
+          config.categoryNumber = ""
+          config.objectIds = intersectMatch[1] ? intersectMatch[1].split(',')
             .map(id => id.trim())
             .filter(id => id)
             .map(id => id.replace(/['"]/g, ''))
             .join(',') : ""
-        } else {
-          // Try to match getProductsManual
-          intersectMatch = html.match(/x-intersect[^"]*"[^"]*getProductsManual\(\[(.*?)\]\)/);
-          if (intersectMatch) {
-            config.categoryNumber = ""
-            config.objectIds = intersectMatch[1] ? intersectMatch[1].split(',')
-              .map(id => id.trim())
-              .filter(id => id)
-              .map(id => id.replace(/['"]/g, ''))
-              .join(',') : ""
-          }
         }
       }
 
-      config.sale = html.includes('class="old-price"') ? "yes" : "no"
+      // Sale is now auto-detected by the template, no need to store it in config
       break
 
     case "hero-banner": {
