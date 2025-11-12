@@ -11,6 +11,8 @@ export interface SwiperSlide {
   desktopImage: string
   mobileImage: string
   altText: string
+  utmSource?: string
+  campaignName?: string
 }
 
 export interface SwiperConfig {

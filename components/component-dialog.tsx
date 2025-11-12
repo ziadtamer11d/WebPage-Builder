@@ -182,33 +182,67 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                 <h3 className="text-lg font-medium">
                   Edit {slides[selectedIndex]?.altText || `Slide ${selectedIndex + 1}`}
                 </h3>
+                <div>
+                  <Label htmlFor="link-url">Link URL</Label>
+                  <Input
+                    id="link-url"
+                    value={slides[selectedIndex]?.linkUrl || ""}
+                    onChange={(e) => {
+                      const newSlides = [...slides]
+                      newSlides[selectedIndex] = { ...newSlides[selectedIndex], linkUrl: e.target.value }
+                      setConfig({ ...config, slides: newSlides })
+                    }}
+                    placeholder="https://example.com"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="link-url">Link URL</Label>
+                    <Label htmlFor="utm-source">UTM Source {(slides[selectedIndex]?.utmSource || slides[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                     <Input
-                      id="link-url"
-                      value={slides[selectedIndex]?.linkUrl || ""}
+                      id="utm-source"
+                      value={slides[selectedIndex]?.utmSource || ""}
                       onChange={(e) => {
                         const newSlides = [...slides]
-                        newSlides[selectedIndex] = { ...newSlides[selectedIndex], linkUrl: e.target.value }
+                        newSlides[selectedIndex] = { ...newSlides[selectedIndex], utmSource: e.target.value }
                         setConfig({ ...config, slides: newSlides })
                       }}
-                      placeholder="https://example.com"
+                      placeholder="e.g., Sports_Menu"
+                      className={(slides[selectedIndex]?.campaignName && !slides[selectedIndex]?.utmSource) ? "border-red-500" : ""}
                     />
+                    {slides[selectedIndex]?.campaignName && !slides[selectedIndex]?.utmSource && (
+                      <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
+                    )}
                   </div>
                   <div>
-                    <Label htmlFor="alt-text">Alt Text</Label>
+                    <Label htmlFor="campaign-name">Campaign Name {(slides[selectedIndex]?.utmSource || slides[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                     <Input
-                      id="alt-text"
-                      value={slides[selectedIndex]?.altText || ""}
+                      id="campaign-name"
+                      value={slides[selectedIndex]?.campaignName || ""}
                       onChange={(e) => {
                         const newSlides = [...slides]
-                        newSlides[selectedIndex] = { ...newSlides[selectedIndex], altText: e.target.value }
+                        newSlides[selectedIndex] = { ...newSlides[selectedIndex], campaignName: e.target.value }
                         setConfig({ ...config, slides: newSlides })
                       }}
-                      placeholder="Image description"
+                      placeholder="e.g., sports-menu"
+                      className={(slides[selectedIndex]?.utmSource && !slides[selectedIndex]?.campaignName) ? "border-red-500" : ""}
                     />
+                    {slides[selectedIndex]?.utmSource && !slides[selectedIndex]?.campaignName && (
+                      <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
+                    )}
                   </div>
+                </div>
+                <div>
+                  <Label htmlFor="alt-text">Alt Text</Label>
+                  <Input
+                    id="alt-text"
+                    value={slides[selectedIndex]?.altText || ""}
+                    onChange={(e) => {
+                      const newSlides = [...slides]
+                      newSlides[selectedIndex] = { ...newSlides[selectedIndex], altText: e.target.value }
+                      setConfig({ ...config, slides: newSlides })
+                    }}
+                    placeholder="Image description"
+                  />
                 </div>
                 <div>
                   <Label htmlFor="desktop-image">Desktop Image URL</Label>
@@ -337,6 +371,42 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                   placeholder="https://example.com"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="utm-source">UTM Source {(categories[selectedIndex]?.utmSource || categories[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                  <Input
+                    id="utm-source"
+                    value={categories[selectedIndex]?.utmSource || ""}
+                    onChange={(e) => {
+                      const newCategories = [...(config.categories || [{}, {}, {}, {}])]
+                      newCategories[selectedIndex] = { ...newCategories[selectedIndex], utmSource: e.target.value }
+                      setConfig({ ...config, categories: newCategories })
+                    }}
+                    placeholder="e.g., Sports_Menu"
+                    className={(categories[selectedIndex]?.campaignName && !categories[selectedIndex]?.utmSource) ? "border-red-500" : ""}
+                  />
+                  {categories[selectedIndex]?.campaignName && !categories[selectedIndex]?.utmSource && (
+                    <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="campaign-name">Campaign Name {(categories[selectedIndex]?.utmSource || categories[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                  <Input
+                    id="campaign-name"
+                    value={categories[selectedIndex]?.campaignName || ""}
+                    onChange={(e) => {
+                      const newCategories = [...(config.categories || [{}, {}, {}, {}])]
+                      newCategories[selectedIndex] = { ...newCategories[selectedIndex], campaignName: e.target.value }
+                      setConfig({ ...config, categories: newCategories })
+                    }}
+                    placeholder="e.g., sports-menu"
+                    className={(categories[selectedIndex]?.utmSource && !categories[selectedIndex]?.campaignName) ? "border-red-500" : ""}
+                  />
+                  {categories[selectedIndex]?.utmSource && !categories[selectedIndex]?.campaignName && (
+                    <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
+                  )}
+                </div>
+              </div>
               <div>
                 <Label htmlFor="image-url">Image URL</Label>
                 <Input
@@ -434,33 +504,67 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
               <h3 className="text-lg font-medium">
                 Edit {icons[selectedIndex]?.subtitle || `Icon ${selectedIndex + 1}`}
               </h3>
+              <div>
+                <Label htmlFor="link-url">Link URL</Label>
+                <Input
+                  id="link-url"
+                  value={icons[selectedIndex]?.linkUrl || ""}
+                  onChange={(e) => {
+                    const newIcons = [...(config.icons || Array(8).fill({}))]
+                    newIcons[selectedIndex] = { ...newIcons[selectedIndex], linkUrl: e.target.value }
+                    setConfig({ ...config, icons: newIcons })
+                  }}
+                  placeholder="https://example.com"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="link-url">Link URL</Label>
+                  <Label htmlFor="utm-source">UTM Source {(icons[selectedIndex]?.utmSource || icons[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                   <Input
-                    id="link-url"
-                    value={icons[selectedIndex]?.linkUrl || ""}
+                    id="utm-source"
+                    value={icons[selectedIndex]?.utmSource || ""}
                     onChange={(e) => {
                       const newIcons = [...(config.icons || Array(8).fill({}))]
-                      newIcons[selectedIndex] = { ...newIcons[selectedIndex], linkUrl: e.target.value }
+                      newIcons[selectedIndex] = { ...newIcons[selectedIndex], utmSource: e.target.value }
                       setConfig({ ...config, icons: newIcons })
                     }}
-                    placeholder="https://example.com"
+                    placeholder="e.g., Sports_Menu"
+                    className={(icons[selectedIndex]?.campaignName && !icons[selectedIndex]?.utmSource) ? "border-red-500" : ""}
                   />
+                  {icons[selectedIndex]?.campaignName && !icons[selectedIndex]?.utmSource && (
+                    <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
+                  )}
                 </div>
                 <div>
-                  <Label htmlFor="subtitle">Subtitle</Label>
+                  <Label htmlFor="campaign-name">Campaign Name {(icons[selectedIndex]?.utmSource || icons[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                   <Input
-                    id="subtitle"
-                    value={icons[selectedIndex]?.subtitle || ""}
+                    id="campaign-name"
+                    value={icons[selectedIndex]?.campaignName || ""}
                     onChange={(e) => {
                       const newIcons = [...(config.icons || Array(8).fill({}))]
-                      newIcons[selectedIndex] = { ...newIcons[selectedIndex], subtitle: e.target.value }
+                      newIcons[selectedIndex] = { ...newIcons[selectedIndex], campaignName: e.target.value }
                       setConfig({ ...config, icons: newIcons })
                     }}
-                    placeholder="Icon subtitle"
+                    placeholder="e.g., sports-menu"
+                    className={(icons[selectedIndex]?.utmSource && !icons[selectedIndex]?.campaignName) ? "border-red-500" : ""}
                   />
+                  {icons[selectedIndex]?.utmSource && !icons[selectedIndex]?.campaignName && (
+                    <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
+                  )}
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="subtitle">Subtitle</Label>
+                <Input
+                  id="subtitle"
+                  value={icons[selectedIndex]?.subtitle || ""}
+                  onChange={(e) => {
+                    const newIcons = [...(config.icons || Array(8).fill({}))]
+                    newIcons[selectedIndex] = { ...newIcons[selectedIndex], subtitle: e.target.value }
+                    setConfig({ ...config, icons: newIcons })
+                  }}
+                  placeholder="Icon subtitle"
+                />
               </div>
               <div>
                 <Label htmlFor="image-url">Image URL</Label>
@@ -624,6 +728,44 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                 }
                 placeholder="Enter redirection URL"
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="utm-source">UTM Source {(config.bannerConfig?.utmSource || config.bannerConfig?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                <Input
+                  id="utm-source"
+                  value={config.bannerConfig?.utmSource || ""}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      bannerConfig: { ...config.bannerConfig, utmSource: e.target.value },
+                    })
+                  }
+                  placeholder="e.g., Sports_Menu"
+                  className={(config.bannerConfig?.campaignName && !config.bannerConfig?.utmSource) ? "border-red-500" : ""}
+                />
+                {config.bannerConfig?.campaignName && !config.bannerConfig?.utmSource && (
+                  <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="campaign-name">Campaign Name {(config.bannerConfig?.utmSource || config.bannerConfig?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                <Input
+                  id="campaign-name"
+                  value={config.bannerConfig?.campaignName || ""}
+                  onChange={(e) =>
+                    setConfig({
+                      ...config,
+                      bannerConfig: { ...config.bannerConfig, campaignName: e.target.value },
+                    })
+                  }
+                  placeholder="e.g., sports-menu"
+                  className={(config.bannerConfig?.utmSource && !config.bannerConfig?.campaignName) ? "border-red-500" : ""}
+                />
+                {config.bannerConfig?.utmSource && !config.bannerConfig?.campaignName && (
+                  <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
+                )}
+              </div>
             </div>
           </div>
         )}

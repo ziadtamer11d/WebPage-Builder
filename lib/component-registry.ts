@@ -1,4 +1,5 @@
 import { settingsModel } from "./settings-model";
+import { appendUTMToURL } from "./utm-utils";
 
 export interface ComponentTemplate {
   name: string
@@ -24,18 +25,24 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            utmSource: "",
+            campaignName: "",
           },
           {
             linkUrl: "",
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            utmSource: "",
+            campaignName: "",
           },
           {
             linkUrl: "",
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            utmSource: "",
+            campaignName: "",
           },
         ],
       },
@@ -45,10 +52,11 @@ class ComponentRegistryClass {
         // If there's only one slide, use the simple template
         if (slides.length === 1) {
           const slide = slides[0]
+          const linkWithUTM = appendUTMToURL(slide.linkUrl, slide.utmSource, slide.campaignName)
           return `<div>
-  <a href="${slide.linkUrl}"></a>
+  <a href="${linkWithUTM}"></a>
   <div class="swiper-slide">
-    <a href="${slide.linkUrl}">
+    <a href="${linkWithUTM}">
       <picture>
         <source media="(min-width: 768px)" srcset="${slide.desktopImage}" />
         <!-- Mobile image -->
@@ -63,8 +71,10 @@ class ComponentRegistryClass {
         // Multiple slides - use swiper template
         const slidesHTML = slides
           .map(
-            (slide: any) => `
-    <div class="swiper-slide"><a href="${slide.linkUrl}">
+            (slide: any) => {
+              const linkWithUTM = appendUTMToURL(slide.linkUrl, slide.utmSource, slide.campaignName)
+              return `
+    <div class="swiper-slide"><a href="${linkWithUTM}">
       <picture>
         <source media="(min-width: 768px)" srcset="${slide.desktopImage}" />
         <!-- Mobile image -->
@@ -72,7 +82,8 @@ class ComponentRegistryClass {
         <!-- Fallback for older browsers -->
         <img src="${slide.desktopImage}" class="slider-picture" alt="${slide.altText}" loading="lazy" />
       </picture></a>
-    </div>`,
+    </div>`
+            },
           )
           .join("")
 
@@ -94,26 +105,29 @@ class ComponentRegistryClass {
         title: "",
         backgroundColor: "",
         categories: [
-          { linkUrl: "", imageUrl: "", altText: "" },
-          { linkUrl: "", imageUrl: "", altText: "" },
-          { linkUrl: "", imageUrl: "", altText: "" },
-          { linkUrl: "", imageUrl: "", altText: "" },
+          { linkUrl: "", imageUrl: "", altText: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", utmSource: "", campaignName: "" },
         ],
       },
       generateHTML: (config) => {
         const categories = config.categories || []
         const categoriesHTML = categories
           .map(
-            (category: any) => `
+            (category: any) => {
+              const linkWithUTM = appendUTMToURL(category.linkUrl, category.utmSource, category.campaignName)
+              return `
       <div class="four_categories_category_wrapper">
         <div style="max-width: 100%;">
-          <a href="${category.linkUrl}">
+          <a href="${linkWithUTM}">
             <div class="four_categories_image_wrapper">
               <img src="${category.imageUrl}" alt="${category.altText}" loading="lazy" width="432" height="467" />
             </div>
           </a>
         </div>
-      </div>`,
+      </div>`
+            },
           )
           .join("")
 
@@ -137,22 +151,24 @@ class ComponentRegistryClass {
       defaultConfig: {
         title: "",
         icons: [
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
-          { linkUrl: "", imageUrl: "", altText: "", subtitle: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
+          { linkUrl: "", imageUrl: "", altText: "", subtitle: "", utmSource: "", campaignName: "" },
         ],
       },
       generateHTML: (config) => {
         const icons = config.icons || []
         const iconsHTML = icons
           .map(
-            (icon: any) => `
-      <a href="${icon.linkUrl}" class="icon-wrapper">
+            (icon: any) => {
+              const linkWithUTM = appendUTMToURL(icon.linkUrl, icon.utmSource, icon.campaignName)
+              return `
+      <a href="${linkWithUTM}" class="icon-wrapper">
         <div class="icon-container">
           <div class="picture-container">
             <picture aria-hidden="true" style="padding-top: 109.773%">
@@ -163,7 +179,8 @@ class ComponentRegistryClass {
             <span>${icon.subtitle}</span>
           </div>
         </div>
-      </a>`,
+      </a>`
+            },
           )
           .join("")
 
@@ -190,7 +207,9 @@ class ComponentRegistryClass {
           desktopImage: "",
           mobileImage: "",
           altText: "",
-          linkUrl: ""
+          linkUrl: "",
+          utmSource: "",
+          campaignName: ""
         }
       },
       generateHTML: (config) => {
@@ -217,9 +236,12 @@ class ComponentRegistryClass {
         const arrowClassRight = config.mode === "title" ? 'right_no_image_arrow' : 'right_showroom_arrow'
 
         // Banner HTML for image mode
+        const bannerLinkWithUTM = config.mode === "image" && config.bannerConfig 
+          ? appendUTMToURL(config.bannerConfig.linkUrl || "", config.bannerConfig.utmSource, config.bannerConfig.campaignName)
+          : ""
         const bannerHTML = config.mode === "image" && (config.bannerConfig?.desktopImage || config.bannerConfig?.mobileImage) ? `
                     <template x-if="(desktopBannerImage && desktopBannerImage.trim() !== '') || (mobileBannerImage && mobileBannerImage.trim() !== '')">
-                        <a style="text-decoration: none; display: block; position: relative" href="${config.bannerConfig.linkUrl || ''}">
+                        <a style="text-decoration: none; display: block; position: relative" href="${bannerLinkWithUTM}">
                             <div class="showroom-banner-wrapper">
                                 <!-- DESKTOP BANNER IMAGE - Shows on desktop only -->
                                 <span class="showroom-desktop-banner">

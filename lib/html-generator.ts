@@ -3,6 +3,7 @@ import { AssetRegistry } from "./asset-registry"
 import { PreviewComponentRegistry } from "./preview-component-registry"
 import { PreviewAssetRegistry } from "./preview-asset-registry"
 import { settingsModel } from "./settings-model"
+import { parseUTMFromURL, removeUTMFromURL } from "./utm-utils"
 import type { Component as ComponentType } from "@/types/component"
 
 /**
@@ -209,23 +210,37 @@ function extractComponentConfig(html: string, type: string): any {
           const desktopImage = desktopSource?.match(/srcset="([^"]*)"/)?.[1] || imgSrc;
           const mobileImage = mobileSource?.match(/srcset="([^"]*)"/)?.[1] || desktopImage;
 
+          const fullLinkUrl = linkMatch[1] || ""
+          const utmParams = parseUTMFromURL(fullLinkUrl)
+          const cleanLinkUrl = removeUTMFromURL(fullLinkUrl)
+
           config.slides = [{
-            linkUrl: linkMatch[1] || "",
+            linkUrl: cleanLinkUrl,
             desktopImage: desktopImage || "",
             mobileImage: mobileImage || "",
-            altText: imgAlt || ""
+            altText: imgAlt || "",
+            utmSource: utmParams.utmSource || "",
+            campaignName: utmParams.campaignName || ""
           }];
         } else {
           config.slides = [];
         }
       } else {
         const slideMatches = html.matchAll(/<div class="swiper-slide">[\s\S]*?href="([^"]*)"[\s\S]*?srcset="([^"]*)"[\s\S]*?srcset="([^"]*)"[\s\S]*?src="([^"]*)"[\s\S]*?alt="([^"]*)"[\s\S]*?<\/div>/g)
-        const slides = Array.from(slideMatches).map(match => ({
-          linkUrl: match[1] || "",
-          desktopImage: match[2] || match[4] || "",
-          mobileImage: match[3] || "",
-          altText: match[5] || ""
-        }))
+        const slides = Array.from(slideMatches).map(match => {
+          const fullLinkUrl = match[1] || ""
+          const utmParams = parseUTMFromURL(fullLinkUrl)
+          const cleanLinkUrl = removeUTMFromURL(fullLinkUrl)
+          
+          return {
+            linkUrl: cleanLinkUrl,
+            desktopImage: match[2] || match[4] || "",
+            mobileImage: match[3] || "",
+            altText: match[5] || "",
+            utmSource: utmParams.utmSource || "",
+            campaignName: utmParams.campaignName || ""
+          }
+        })
         config.slides = slides
       }
       break
@@ -257,10 +272,16 @@ function extractComponentConfig(html: string, type: string): any {
           altText = imgMatchAltFirst[1]
         }
         
+        const fullLinkUrl = linkMatch ? linkMatch[1] : ""
+        const utmParams = parseUTMFromURL(fullLinkUrl)
+        const cleanLinkUrl = removeUTMFromURL(fullLinkUrl)
+        
         return {
-          linkUrl: linkMatch ? linkMatch[1] : "",
+          linkUrl: cleanLinkUrl,
           imageUrl: imageUrl,
-          altText: altText
+          altText: altText,
+          utmSource: utmParams.utmSource || "",
+          campaignName: utmParams.campaignName || ""
         }
       })
 
@@ -268,7 +289,9 @@ function extractComponentConfig(html: string, type: string): any {
         config.categories.push({
           linkUrl: "",
           imageUrl: "",
-          altText: ""
+          altText: "",
+          utmSource: "",
+          campaignName: ""
         })
       }
       break
@@ -298,11 +321,17 @@ function extractComponentConfig(html: string, type: string): any {
           altText = imgMatchAltFirst[1]
         }
         
+        const fullLinkUrl = linkMatch ? linkMatch[1] : ""
+        const utmParams = parseUTMFromURL(fullLinkUrl)
+        const cleanLinkUrl = removeUTMFromURL(fullLinkUrl)
+        
         return {
-          linkUrl: linkMatch ? linkMatch[1] : "",
+          linkUrl: cleanLinkUrl,
           imageUrl: imageUrl,
           altText: altText,
-          subtitle: subtitleMatch ? subtitleMatch[1] : ""
+          subtitle: subtitleMatch ? subtitleMatch[1] : "",
+          utmSource: utmParams.utmSource || "",
+          campaignName: utmParams.campaignName || ""
         }
       })
 
@@ -311,7 +340,9 @@ function extractComponentConfig(html: string, type: string): any {
           linkUrl: "",
           imageUrl: "",
           altText: "",
-          subtitle: ""
+          subtitle: "",
+          utmSource: "",
+          campaignName: ""
         })
       }
       break
@@ -350,7 +381,11 @@ function extractComponentConfig(html: string, type: string): any {
         }
         
         const bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
-        bannerConfig.linkUrl = bannerLinkMatch ? bannerLinkMatch[1] : ""
+        const fullBannerLink = bannerLinkMatch ? bannerLinkMatch[1] : ""
+        const bannerUtmParams = parseUTMFromURL(fullBannerLink)
+        bannerConfig.linkUrl = removeUTMFromURL(fullBannerLink)
+        bannerConfig.utmSource = bannerUtmParams.utmSource || ""
+        bannerConfig.campaignName = bannerUtmParams.campaignName || ""
         
         config.bannerConfig = bannerConfig
       }
