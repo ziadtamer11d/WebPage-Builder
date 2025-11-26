@@ -354,10 +354,47 @@ function extractComponentConfig(html: string, type: string): any {
 
       if (isTabbedShowroom) {
         // Parse tabbed showroom
-        const titleMatch = html.match(/<h2[^>]*id="showroom-title"[^>]*>([\s\S]*?)<\/h2>/)
-        config.title = titleMatch ? titleMatch[1].trim() : ""
-        config.mode = "title"
         config.direction = html.includes('showroom-container-rtl') ? "rtl" : "ltr"
+        
+        // Detect mode by checking for banner images
+        const hasBannerImages = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
+        const titleMatch = html.match(/<h2[^>]*id="showroom-title"[^>]*>([\s\S]*?)<\/h2>/)
+        const titleText = titleMatch ? titleMatch[1].trim() : ""
+        
+        if (hasBannerImages || (!titleText && html.includes('showroom-banner-wrapper'))) {
+          // Image mode
+          config.mode = "image"
+          
+          const bannerConfig: any = {}
+          
+          // Extract from x-data attribute
+          const xDataMatch = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
+          const xDataMobileMatch = html.match(/x-data=["'][^"']*mobileBannerImage:\s*['"]([^'"]*)['"]/);
+          const xDataAltMatch = html.match(/x-data=["'][^"']*bannerAlt:\s*['"]([^'"]*)['"]/);
+          
+          if (xDataMatch || xDataMobileMatch) {
+            bannerConfig.desktopImage = xDataMatch ? xDataMatch[1] : ""
+            bannerConfig.mobileImage = xDataMobileMatch ? xDataMobileMatch[1] : bannerConfig.desktopImage
+            bannerConfig.altText = xDataAltMatch ? xDataAltMatch[1] : ""
+          }
+          
+          // Try multiple patterns to find the banner link
+          let bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
+          if (!bannerLinkMatch) {
+            bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-desktop-banner/);
+          }
+          const fullBannerLink = bannerLinkMatch ? bannerLinkMatch[1] : ""
+          const bannerUtmParams = parseUTMFromURL(fullBannerLink)
+          bannerConfig.linkUrl = removeUTMFromURL(fullBannerLink)
+          bannerConfig.utmSource = bannerUtmParams.utmSource || ""
+          bannerConfig.campaignName = bannerUtmParams.campaignName || ""
+          
+          config.bannerConfig = bannerConfig
+        } else {
+          // Title mode
+          config.mode = "title"
+          config.title = titleText
+        }
 
         // Extract tabs
         const tabs: any[] = []

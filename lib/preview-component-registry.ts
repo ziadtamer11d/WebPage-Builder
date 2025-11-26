@@ -295,14 +295,49 @@ class PreviewComponentRegistryClass {
         </div>`
           }).join('\n\n')
 
+          // Banner HTML for image mode
+          const bannerLinkWithUTM = config.mode === "image" && config.bannerConfig 
+            ? appendUTMToURL(config.bannerConfig.linkUrl || "", config.bannerConfig.utmSource, config.bannerConfig.campaignName)
+            : ""
+          const bannerHTML = config.mode === "image" && (config.bannerConfig?.desktopImage || config.bannerConfig?.mobileImage) ? `
+        <template x-if="(desktopBannerImage && desktopBannerImage.trim() !== '') || (mobileBannerImage && mobileBannerImage.trim() !== '')">
+            <a style="text-decoration: none; display: block; position: relative" href="${bannerLinkWithUTM}">
+                <div class="showroom-banner-wrapper">
+                    <!-- DESKTOP BANNER IMAGE - Shows on desktop only -->
+                    <span class="showroom-desktop-banner">
+                        <span>
+                            <img alt="" aria-hidden="true" src="data:image/svg+xml,%3csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20version=%271.1%27%20width=%27268%27%20height=%27477%27/%3e">
+                        </span>
+                        <img :alt="bannerAlt" :src="desktopBannerImage" class="showroom-banner-image" />
+                    </span>
+                    <div style="box-sizing: border-box; margin: 0px; min-width: 0px; height: 100%; width: 100%; position: relative;">
+                        <!-- MOBILE BANNER IMAGE - Shows on mobile only -->
+                        <span class="showroom-mobile-banner">
+                            <img :alt="bannerAlt" :src="mobileBannerImage" class="showroom-banner-image" />
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </template>` : ''
+
+          // X-data initialization for banner
+          const xDataInit = config.mode === "image" 
+            ? `x-data="{ activeTab: '${firstTabName}', desktopBannerImage: '${config.bannerConfig?.desktopImage || ''}', mobileBannerImage: '${config.bannerConfig?.mobileImage || ''}', bannerAlt: '${config.bannerConfig?.altText || ''}' }"` 
+            : `x-data="{ activeTab: '${firstTabName}' }"`
+
           return `<!-- Tabbed Showroom Start -->
-<div x-data="{ activeTab: '${firstTabName}' }">
-    <div class="showroom-heading">
+<div ${xDataInit}>
+    ${config.mode === "title" ? `<div class="showroom-heading">
         <h2 id="showroom-title">${config.title || 'Products'}</h2>
         <ul class="showroom-buttons-list">
 ${tabButtons}
         </ul>
-    </div>
+    </div>` : `${bannerHTML}
+    <div class="showroom-heading" style="margin-top: 20px;">
+        <ul class="showroom-buttons-list">
+${tabButtons}
+        </ul>
+    </div>`}
     <div class="component-container">
 ${tabContents}
     </div>

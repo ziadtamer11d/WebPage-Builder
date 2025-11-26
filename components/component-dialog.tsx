@@ -738,17 +738,120 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
             {/* Right Content - 80% width */}
             <div className="flex-1 flex flex-col">
               <div className="flex-1 p-6 overflow-y-auto">
-                {config.mode === "title" && (
-                  <div className="mb-6">
-                    <Label htmlFor="showroom-title">Showroom Title</Label>
-                    <Input
-                      id="showroom-title"
-                      value={config.title || ""}
-                      onChange={(e) => setConfig({ ...config, title: e.target.value })}
-                      placeholder="Enter showroom title"
-                    />
-                  </div>
-                )}
+                {/* Showroom Title/Banner Configuration */}
+                <div className="mb-6 space-y-4 pb-6 border-b">
+                  <h3 className="text-lg font-semibold">Showroom Header</h3>
+                  {config.mode === "title" ? (
+                    <div>
+                      <Label htmlFor="showroom-title">Showroom Title</Label>
+                      <Input
+                        id="showroom-title"
+                        value={config.title || ""}
+                        onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                        placeholder="Enter showroom title"
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div>
+                        <Label htmlFor="desktop-image">Desktop Image URL</Label>
+                        <Input
+                          id="desktop-image"
+                          value={config.bannerConfig?.desktopImage || ""}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              bannerConfig: { ...config.bannerConfig, desktopImage: e.target.value },
+                            })
+                          }
+                          placeholder="Enter desktop image URL"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="mobile-image">Mobile Image URL</Label>
+                        <Input
+                          id="mobile-image"
+                          value={config.bannerConfig?.mobileImage || ""}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              bannerConfig: { ...config.bannerConfig, mobileImage: e.target.value },
+                            })
+                          }
+                          placeholder="Enter mobile image URL"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="alt-text">Alt Text</Label>
+                        <Input
+                          id="alt-text"
+                          value={config.bannerConfig?.altText || ""}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              bannerConfig: { ...config.bannerConfig, altText: e.target.value },
+                            })
+                          }
+                          placeholder="Enter image alt text"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="link-url">Redirection Link</Label>
+                        <Input
+                          id="link-url"
+                          value={config.bannerConfig?.linkUrl || ""}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              bannerConfig: { ...config.bannerConfig, linkUrl: e.target.value },
+                            })
+                          }
+                          placeholder="Enter redirection URL"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="utm-source">UTM Source {(config.bannerConfig?.utmSource || config.bannerConfig?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                          <Input
+                            id="utm-source"
+                            value={config.bannerConfig?.utmSource || ""}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                bannerConfig: { ...config.bannerConfig, utmSource: e.target.value },
+                              })
+                            }
+                            placeholder="e.g., Sports_Menu"
+                            className={(config.bannerConfig?.campaignName && !config.bannerConfig?.utmSource) ? "border-red-500" : ""}
+                          />
+                          {config.bannerConfig?.campaignName && !config.bannerConfig?.utmSource && (
+                            <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
+                          )}
+                        </div>
+                        <div>
+                          <Label htmlFor="campaign-name">Campaign Name {(config.bannerConfig?.utmSource || config.bannerConfig?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                          <Input
+                            id="campaign-name"
+                            value={config.bannerConfig?.campaignName || ""}
+                            onChange={(e) =>
+                              setConfig({
+                                ...config,
+                                bannerConfig: { ...config.bannerConfig, campaignName: e.target.value },
+                              })
+                            }
+                            placeholder="e.g., sports-menu"
+                            className={(config.bannerConfig?.utmSource && !config.bannerConfig?.campaignName) ? "border-red-500" : ""}
+                          />
+                          {config.bannerConfig?.utmSource && !config.bannerConfig?.campaignName && (
+                            <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Tab Configuration */}
                 {config.tabs && config.tabs[selectedIndex] && (
                   <div className="space-y-4">
                     <h3 className="text-lg font-semibold">Edit Tab {selectedIndex + 1}</h3>
