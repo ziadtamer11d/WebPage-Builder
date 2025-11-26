@@ -126,12 +126,16 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       return
     }
 
-    const modelCodes = [...new Set(
-      modelCodesInput
-        .split(/[\n,]/)
-        .map(code => code.trim())
-        .filter(code => code.length > 0)
-    )]
+    // Split by newline or comma and preserve order
+    const modelCodesArray = modelCodesInput
+      .split(/[\n,]/)
+      .map(code => code.trim())
+      .filter(code => code.length > 0)
+    
+    // Remove duplicates while preserving order (Set maintains insertion order in ES6+)
+    const modelCodes = [...new Set(modelCodesArray)]
+    
+    console.log('Model codes in order:', modelCodes)
 
     if (modelCodes.length === 0) {
       alert('No valid model codes found')
@@ -140,6 +144,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
     setIsLoading(true)
     setFoundProducts([])
+    setProductOrder([])
     setNotFoundCodes([])
 
     try {
@@ -178,8 +183,12 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
         }
       }
 
+      const initialOrder = foundProductsTemp.map(p => p.objectID)
+      console.log('Found products in order:', foundProductsTemp.map(p => p.id_code_model))
+      console.log('ObjectIDs in order:', initialOrder)
+      
       setFoundProducts(foundProductsTemp)
-      setProductOrder(foundProductsTemp.map(p => p.objectID)) // Initialize order
+      setProductOrder(initialOrder) // Initialize order based on search order
       setNotFoundCodes(notFoundCodesTemp)
       
       // Compute facets from found products
@@ -407,10 +416,21 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     
     // Reorder the productOrder array
     const newOrder = [...productOrder]
+    
+    // Remove the dragged item
     newOrder.splice(draggedIndexInOrder, 1)
-    newOrder.splice(targetIndexInOrder, 0, draggedProductId)
+    
+    // Calculate correct insertion index after removal
+    // If we dragged from before the target, target index shifts down by 1
+    const adjustedTargetIndex = draggedIndexInOrder < targetIndexInOrder 
+      ? targetIndexInOrder - 1 
+      : targetIndexInOrder
+    
+    // Insert at the adjusted position
+    newOrder.splice(adjustedTargetIndex, 0, draggedProductId)
     
     console.log('New order after drag:', newOrder)
+    console.log('Will be displayed as:', newOrder.join(','))
     
     setProductOrder(newOrder)
     setDraggedIndex(index)
