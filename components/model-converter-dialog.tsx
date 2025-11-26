@@ -354,9 +354,12 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
   const copyObjectIDs = () => {
     const ids = filteredProducts.map(p => p.objectID).join(',')
-    console.log('Copying ObjectIDs:', ids)
-    console.log('Product order array:', productOrder)
-    console.log('Filtered products:', filteredProducts.map(p => p.objectID))
+    console.log('=== COPYING OBJECT IDS ===')
+    console.log('Current productOrder:', productOrder)
+    console.log('Current orderedProducts:', orderedProducts.map(p => p.objectID))
+    console.log('Current filteredProducts:', filteredProducts.map(p => p.objectID))
+    console.log('COPYING TO CLIPBOARD:', ids)
+    console.log('======================')
     navigator.clipboard.writeText(ids).then(() => {
       setCopiedState('objectids')
       setTimeout(() => setCopiedState('idle'), 2000)
@@ -396,41 +399,25 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     e.preventDefault()
     if (draggedIndex === null || draggedIndex === index) return
     
-    // Get the objectIDs of dragged and target products
-    const draggedProductId = filteredProducts[draggedIndex].objectID
-    const targetProductId = filteredProducts[index].objectID
+    console.log('=== DRAG OPERATION ===')
+    console.log('Visual drag from index', draggedIndex, 'to index', index)
     
-    console.log('Dragging:', draggedProductId, 'to position of:', targetProductId)
+    // Simple approach: reorder the filtered products array directly
+    const reorderedFiltered = [...filteredProducts]
+    const [draggedItem] = reorderedFiltered.splice(draggedIndex, 1)
+    reorderedFiltered.splice(index, 0, draggedItem)
     
-    // Find their positions in the productOrder array
-    const draggedIndexInOrder = productOrder.indexOf(draggedProductId)
-    const targetIndexInOrder = productOrder.indexOf(targetProductId)
+    console.log('Reordered filtered products:', reorderedFiltered.map(p => p.objectID))
     
-    console.log('Current order before drag:', productOrder)
-    console.log('Dragged index in order:', draggedIndexInOrder, 'Target index in order:', targetIndexInOrder)
+    // Get IDs of filtered products in new order
+    const filteredIds = new Set(reorderedFiltered.map(p => p.objectID))
     
-    if (draggedIndexInOrder === -1 || targetIndexInOrder === -1) {
-      console.log('ERROR: Could not find products in order array')
-      return
-    }
+    // Create new productOrder: non-filtered items + reordered filtered items
+    const nonFilteredIds = productOrder.filter(id => !filteredIds.has(id))
+    const newOrder = [...reorderedFiltered.map(p => p.objectID), ...nonFilteredIds]
     
-    // Reorder the productOrder array
-    const newOrder = [...productOrder]
-    
-    // Remove the dragged item
-    newOrder.splice(draggedIndexInOrder, 1)
-    
-    // Calculate correct insertion index after removal
-    // If we dragged from before the target, target index shifts down by 1
-    const adjustedTargetIndex = draggedIndexInOrder < targetIndexInOrder 
-      ? targetIndexInOrder - 1 
-      : targetIndexInOrder
-    
-    // Insert at the adjusted position
-    newOrder.splice(adjustedTargetIndex, 0, draggedProductId)
-    
-    console.log('New order after drag:', newOrder)
-    console.log('Will be displayed as:', newOrder.join(','))
+    console.log('New complete order:', newOrder)
+    console.log('Will copy as:', reorderedFiltered.map(p => p.objectID).join(','))
     
     setProductOrder(newOrder)
     setDraggedIndex(index)
