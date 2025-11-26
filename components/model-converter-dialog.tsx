@@ -153,7 +153,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       for (const modelCode of modelCodes) {
         try {
           const searchResult = await indexAlg.search('', {
-            filters: `id_code_model:${modelCode}`,
+            filters: `id_code_model:"${modelCode}"`,
             hitsPerPage: 1,
             analytics: false,
           })
