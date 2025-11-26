@@ -161,55 +161,46 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       console.log('Settings:', settings)
       console.log('Creating Algolia client...')
       const clientAlg = (window as any).algoliasearch(settings.app_id, settings.api_search_key)
-      console.log('Client created:', clientAlg)
-      
       const indexAlg = clientAlg.initIndex(settings.index_name)
-      console.log('Index initialized:', settings.index_name)
-
-      // Build filter for ALL model codes at once (much faster than individual queries)
-      const modelCodeFilters = modelCodes.map(code => `id_code_model:"${code}"`).join(' OR ')
       
       console.log('====================================')
       console.log('INPUT MODEL CODES IN ORDER:')
       console.log(modelCodes)
-      console.log('FILTER QUERY:', modelCodeFilters)
       console.log('====================================')
       
-      console.log('Searching Algolia...')
-      // Single search query for all products
-      const searchResult = await indexAlg.search('', {
-        filters: modelCodeFilters,
-        hitsPerPage: 1000,
-        analytics: false,
-        getRankingInfo: false,
-      })
-      console.log('Search complete!')
-      
-      console.log('ALGOLIA RETURNED (in random order):')
-      console.log(searchResult.hits.map((h: Product) => h.id_code_model))
-      
-      // Create a map of model code to product for fast lookup
-      const productMap = new Map<string, Product>()
-      searchResult.hits.forEach((hit: Product) => {
-        if (hit.id_code_model) {
-          productMap.set(hit.id_code_model, hit)
-        }
-      })
-      
-      console.log('PRODUCT MAP KEYS:', Array.from(productMap.keys()))
-      
-      // Reorder products to match the exact input order
+      // Search one by one to preserve order
       const foundProductsTemp: Product[] = []
       const notFoundCodesTemp: string[] = []
+      const processedObjectIDs = new Set<string>()
       
-      modelCodes.forEach(modelCode => {
-        const product = productMap.get(modelCode)
-        if (product) {
-          foundProductsTemp.push(product)
-        } else {
+      console.log('Searching Algolia one by one...')
+      for (const modelCode of modelCodes) {
+        try {
+          console.log(`Searching for: ${modelCode}`)
+          const searchResult = await indexAlg.search('', {
+            filters: `id_code_model:"${modelCode}"`,
+            hitsPerPage: 1,
+            analytics: false,
+          })
+          
+          if (searchResult.hits && searchResult.hits.length > 0) {
+            const hit = searchResult.hits[0] as Product
+            console.log(`  Found: ${hit.objectID}`)
+            if (!processedObjectIDs.has(hit.objectID)) {
+              foundProductsTemp.push(hit)
+              processedObjectIDs.add(hit.objectID)
+            } else {
+              console.log(`  Skipped: duplicate objectID`)
+            }
+          } else {
+            console.log(`  Not found!`)
+            notFoundCodesTemp.push(modelCode)
+          }
+        } catch (error) {
+          console.error(`Error searching for model ${modelCode}:`, error)
           notFoundCodesTemp.push(modelCode)
         }
-      })
+      }
 
       console.log('REORDERED TO MATCH INPUT:')
       console.log(foundProductsTemp.map(p => p.id_code_model))
