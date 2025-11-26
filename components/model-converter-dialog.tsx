@@ -75,6 +75,7 @@ const FACET_DISPLAY_NAMES: Record<string, string> = {
 export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogProps) {
   const [modelCodesInput, setModelCodesInput] = useState("")
   const [foundProducts, setFoundProducts] = useState<Product[]>([])
+  const [productOrder, setProductOrder] = useState<string[]>([]) // Track order by objectID
   const [notFoundCodes, setNotFoundCodes] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [copiedState, setCopiedState] = useState<'idle' | 'objectids' | 'modelcodes' | 'array'>('idle')
@@ -178,6 +179,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       }
 
       setFoundProducts(foundProductsTemp)
+      setProductOrder(foundProductsTemp.map(p => p.objectID)) // Initialize order
       setNotFoundCodes(notFoundCodesTemp)
       
       // Compute facets from found products
@@ -238,10 +240,23 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     setCurrentFilters({})
   }, [])
 
+  // Get ordered products based on productOrder array
+  const orderedProducts = useMemo(() => {
+    if (productOrder.length === 0) return foundProducts
+    
+    // Create a map for quick lookup
+    const productMap = new Map(foundProducts.map(p => [p.objectID, p]))
+    
+    // Return products in the order specified by productOrder
+    return productOrder
+      .map(id => productMap.get(id))
+      .filter((p): p is Product => p !== undefined)
+  }, [foundProducts, productOrder])
+
   // Get filtered products - memoized to prevent infinite loops
   const filteredProducts = useMemo(() => {
-    return applyFilters(foundProducts, currentFilters)
-  }, [foundProducts, currentFilters, applyFilters])
+    return applyFilters(orderedProducts, currentFilters)
+  }, [orderedProducts, currentFilters, applyFilters])
 
   // Get product image URL
   const getProductImageUrl = (product: Product): string | null => {
@@ -342,6 +357,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
   const clearAll = () => {
     setModelCodesInput("")
     setFoundProducts([])
+    setProductOrder([])
     setNotFoundCodes([])
     setCurrentFilters({})
     setFacetsData({})
@@ -350,6 +366,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
   // Remove product by objectID to handle filtered lists correctly
   const removeProduct = (objectID: string) => {
     setFoundProducts(prev => prev.filter(p => p.objectID !== objectID))
+    setProductOrder(prev => prev.filter(id => id !== objectID))
   }
 
   // Drag and drop handlers - work with filteredProducts for correct ordering
@@ -361,17 +378,22 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     e.preventDefault()
     if (draggedIndex === null || draggedIndex === index) return
     
-    // Work with filtered products for display order
-    const newFilteredProducts = [...filteredProducts]
-    const draggedProduct = newFilteredProducts[draggedIndex]
-    newFilteredProducts.splice(draggedIndex, 1)
-    newFilteredProducts.splice(index, 0, draggedProduct)
+    // Get the objectIDs of dragged and target products
+    const draggedProductId = filteredProducts[draggedIndex].objectID
+    const targetProductId = filteredProducts[index].objectID
     
-    // Update foundProducts to match the new order
-    // Keep products that are not in filtered list, then add filtered products in new order
-    const filteredObjectIDs = new Set(filteredProducts.map(p => p.objectID))
-    const nonFilteredProducts = foundProducts.filter(p => !filteredObjectIDs.has(p.objectID))
-    setFoundProducts([...newFilteredProducts, ...nonFilteredProducts])
+    // Find their positions in the productOrder array
+    const draggedIndexInOrder = productOrder.indexOf(draggedProductId)
+    const targetIndexInOrder = productOrder.indexOf(targetProductId)
+    
+    if (draggedIndexInOrder === -1 || targetIndexInOrder === -1) return
+    
+    // Reorder the productOrder array
+    const newOrder = [...productOrder]
+    newOrder.splice(draggedIndexInOrder, 1)
+    newOrder.splice(targetIndexInOrder, 0, draggedProductId)
+    
+    setProductOrder(newOrder)
     setDraggedIndex(index)
   }
 
