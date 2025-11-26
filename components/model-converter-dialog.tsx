@@ -242,15 +242,21 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
   // Get ordered products based on productOrder array
   const orderedProducts = useMemo(() => {
-    if (productOrder.length === 0) return foundProducts
+    if (productOrder.length === 0 || foundProducts.length === 0) return foundProducts
     
     // Create a map for quick lookup
     const productMap = new Map(foundProducts.map(p => [p.objectID, p]))
     
-    // Return products in the order specified by productOrder
-    return productOrder
+    // Get products in the order specified by productOrder
+    const ordered = productOrder
       .map(id => productMap.get(id))
       .filter((p): p is Product => p !== undefined)
+    
+    // Add any products not in productOrder at the end (shouldn't happen, but just in case)
+    const orderedIds = new Set(ordered.map(p => p.objectID))
+    const remaining = foundProducts.filter(p => !orderedIds.has(p.objectID))
+    
+    return [...ordered, ...remaining]
   }, [foundProducts, productOrder])
 
   // Get filtered products - memoized to prevent infinite loops
@@ -339,6 +345,9 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
   const copyObjectIDs = () => {
     const ids = filteredProducts.map(p => p.objectID).join(',')
+    console.log('Copying ObjectIDs:', ids)
+    console.log('Product order array:', productOrder)
+    console.log('Filtered products:', filteredProducts.map(p => p.objectID))
     navigator.clipboard.writeText(ids).then(() => {
       setCopiedState('objectids')
       setTimeout(() => setCopiedState('idle'), 2000)
@@ -382,16 +391,26 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     const draggedProductId = filteredProducts[draggedIndex].objectID
     const targetProductId = filteredProducts[index].objectID
     
+    console.log('Dragging:', draggedProductId, 'to position of:', targetProductId)
+    
     // Find their positions in the productOrder array
     const draggedIndexInOrder = productOrder.indexOf(draggedProductId)
     const targetIndexInOrder = productOrder.indexOf(targetProductId)
     
-    if (draggedIndexInOrder === -1 || targetIndexInOrder === -1) return
+    console.log('Current order before drag:', productOrder)
+    console.log('Dragged index in order:', draggedIndexInOrder, 'Target index in order:', targetIndexInOrder)
+    
+    if (draggedIndexInOrder === -1 || targetIndexInOrder === -1) {
+      console.log('ERROR: Could not find products in order array')
+      return
+    }
     
     // Reorder the productOrder array
     const newOrder = [...productOrder]
     newOrder.splice(draggedIndexInOrder, 1)
     newOrder.splice(targetIndexInOrder, 0, draggedProductId)
+    
+    console.log('New order after drag:', newOrder)
     
     setProductOrder(newOrder)
     setDraggedIndex(index)
@@ -669,7 +688,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
                         const imageUrl = getProductImageUrl(product)
                         return (
                           <div
-                            key={product.objectID}
+                            key={`${product.objectID}-${index}`}
                             draggable
                             onDragStart={() => handleDragStart(index)}
                             onDragOver={(e) => handleDragOver(e, index)}
