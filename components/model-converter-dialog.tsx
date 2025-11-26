@@ -347,12 +347,12 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     setFacetsData({})
   }
 
-  // Remove product
-  const removeProduct = (index: number) => {
-    setFoundProducts(prev => prev.filter((_, i) => i !== index))
+  // Remove product by objectID to handle filtered lists correctly
+  const removeProduct = (objectID: string) => {
+    setFoundProducts(prev => prev.filter(p => p.objectID !== objectID))
   }
 
-  // Drag and drop handlers
+  // Drag and drop handlers - work with filteredProducts for correct ordering
   const handleDragStart = (index: number) => {
     setDraggedIndex(index)
   }
@@ -361,12 +361,17 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     e.preventDefault()
     if (draggedIndex === null || draggedIndex === index) return
     
-    const newProducts = [...foundProducts]
-    const draggedProduct = newProducts[draggedIndex]
-    newProducts.splice(draggedIndex, 1)
-    newProducts.splice(index, 0, draggedProduct)
+    // Work with filtered products for display order
+    const newFilteredProducts = [...filteredProducts]
+    const draggedProduct = newFilteredProducts[draggedIndex]
+    newFilteredProducts.splice(draggedIndex, 1)
+    newFilteredProducts.splice(index, 0, draggedProduct)
     
-    setFoundProducts(newProducts)
+    // Update foundProducts to match the new order
+    // Keep products that are not in filtered list, then add filtered products in new order
+    const filteredObjectIDs = new Set(filteredProducts.map(p => p.objectID))
+    const nonFilteredProducts = foundProducts.filter(p => !filteredObjectIDs.has(p.objectID))
+    setFoundProducts([...newFilteredProducts, ...nonFilteredProducts])
     setDraggedIndex(index)
   }
 
@@ -652,7 +657,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
                             }`}
                           >
                             <button
-                              onClick={() => removeProduct(index)}
+                              onClick={() => removeProduct(product.objectID)}
                               className="absolute top-1 right-1 z-10 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 h-5 w-5 flex items-center justify-center"
                             >
                               <X className="h-3 w-3" />
