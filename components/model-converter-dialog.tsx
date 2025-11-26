@@ -157,6 +157,11 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       // Build filter for ALL model codes at once (much faster than individual queries)
       const modelCodeFilters = modelCodes.map(code => `id_code_model:"${code}"`).join(' OR ')
       
+      console.log('====================================')
+      console.log('INPUT MODEL CODES IN ORDER:')
+      console.log(modelCodes)
+      console.log('====================================')
+      
       // Single search query for all products
       const searchResult = await indexAlg.search('', {
         filters: modelCodeFilters,
@@ -165,6 +170,9 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
         getRankingInfo: false,
       })
       
+      console.log('ALGOLIA RETURNED (in random order):')
+      console.log(searchResult.hits.map((h: Product) => h.id_code_model))
+      
       // Create a map of model code to product for fast lookup
       const productMap = new Map<string, Product>()
       searchResult.hits.forEach((hit: Product) => {
@@ -172,6 +180,8 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
           productMap.set(hit.id_code_model, hit)
         }
       })
+      
+      console.log('PRODUCT MAP KEYS:', Array.from(productMap.keys()))
       
       // Reorder products to match the exact input order
       const foundProductsTemp: Product[] = []
@@ -186,10 +196,16 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
         }
       })
 
+      console.log('REORDERED TO MATCH INPUT:')
+      console.log(foundProductsTemp.map(p => p.id_code_model))
+      console.log('OBJECT IDS IN ORDER:')
+      console.log(foundProductsTemp.map(p => p.objectID))
+      console.log('====================================')
+
       const initialOrder = foundProductsTemp.map(p => p.objectID)
       
       setFoundProducts(foundProductsTemp)
-      setProductOrder(initialOrder) // Initialize order based on search order
+      setProductOrder(initialOrder) // Initialize order based on input order
       setNotFoundCodes(notFoundCodesTemp)
       
       // Compute facets from found products
@@ -254,6 +270,10 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
   const orderedProducts = useMemo(() => {
     if (productOrder.length === 0 || foundProducts.length === 0) return foundProducts
     
+    console.log('=== ORDERING PRODUCTS ===')
+    console.log('productOrder array:', productOrder)
+    console.log('foundProducts ObjectIDs:', foundProducts.map(p => p.objectID))
+    
     // Create a map for quick lookup
     const productMap = new Map(foundProducts.map(p => [p.objectID, p]))
     
@@ -262,11 +282,17 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       .map(id => productMap.get(id))
       .filter((p): p is Product => p !== undefined)
     
+    console.log('ordered result:', ordered.map(p => p.objectID))
+    
     // Add any products not in productOrder at the end (shouldn't happen, but just in case)
     const orderedIds = new Set(ordered.map(p => p.objectID))
     const remaining = foundProducts.filter(p => !orderedIds.has(p.objectID))
     
-    return [...ordered, ...remaining]
+    const final = [...ordered, ...remaining]
+    console.log('FINAL ordered products:', final.map(p => p.objectID))
+    console.log('=========================')
+    
+    return final
   }, [foundProducts, productOrder])
 
   // Get filtered products - memoized to prevent infinite loops
@@ -354,8 +380,11 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
   }
 
   const copyObjectIDs = () => {
+    console.log('=== COPY OBJECT IDS ===')
+    console.log('filteredProducts order:', filteredProducts.map(p => p.objectID))
     const ids = filteredProducts.map(p => p.objectID).join(',')
-    console.log('Copying ObjectIDs:', ids)
+    console.log('COPYING TO CLIPBOARD:', ids)
+    console.log('========================')
     navigator.clipboard.writeText(ids).then(() => {
       setCopiedState('objectids')
       setTimeout(() => setCopiedState('idle'), 2000)
