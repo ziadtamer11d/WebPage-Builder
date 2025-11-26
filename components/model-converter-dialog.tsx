@@ -143,6 +143,10 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
     try {
       const settings = settingsModel.getSettings()
+      if (!settings) {
+        alert('Settings not found. Please configure Algolia settings first.')
+        return
+      }
       const clientAlg = (window as any).algoliasearch(settings.app_id, settings.api_search_key)
       const indexAlg = clientAlg.initIndex(settings.index_name)
 
@@ -319,7 +323,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
   }
 
   const copyObjectIDs = () => {
-    const ids = filteredProducts.map(p => p.objectID).join('\n')
+    const ids = filteredProducts.map(p => p.objectID).join(',')
     navigator.clipboard.writeText(ids).then(() => {
       setCopiedState('objectids')
       setTimeout(() => setCopiedState('idle'), 2000)
