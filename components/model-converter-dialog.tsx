@@ -121,6 +121,9 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
   // Convert model codes to ObjectIDs
   const convertToObjectIDs = async () => {
+    console.log('=== CONVERT FUNCTION CALLED ===')
+    console.log('Input:', modelCodesInput)
+    
     if (!modelCodesInput.trim()) {
       alert('Please enter model codes')
       return
@@ -140,19 +143,28 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       return
     }
 
+    console.log('Setting loading state...')
     setIsLoading(true)
     setFoundProducts([])
     setProductOrder([])
     setNotFoundCodes([])
 
     try {
+      console.log('Getting settings...')
       const settings = settingsModel.getSettings()
       if (!settings) {
+        console.error('No settings found!')
         alert('Settings not found. Please configure Algolia settings first.')
+        setIsLoading(false)
         return
       }
+      console.log('Settings:', settings)
+      console.log('Creating Algolia client...')
       const clientAlg = (window as any).algoliasearch(settings.app_id, settings.api_search_key)
+      console.log('Client created:', clientAlg)
+      
       const indexAlg = clientAlg.initIndex(settings.index_name)
+      console.log('Index initialized:', settings.index_name)
 
       // Build filter for ALL model codes at once (much faster than individual queries)
       const modelCodeFilters = modelCodes.map(code => `id_code_model:"${code}"`).join(' OR ')
@@ -160,8 +172,10 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       console.log('====================================')
       console.log('INPUT MODEL CODES IN ORDER:')
       console.log(modelCodes)
+      console.log('FILTER QUERY:', modelCodeFilters)
       console.log('====================================')
       
+      console.log('Searching Algolia...')
       // Single search query for all products
       const searchResult = await indexAlg.search('', {
         filters: modelCodeFilters,
@@ -169,6 +183,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
         analytics: false,
         getRankingInfo: false,
       })
+      console.log('Search complete!')
       
       console.log('ALGOLIA RETURNED (in random order):')
       console.log(searchResult.hits.map((h: Product) => h.id_code_model))
