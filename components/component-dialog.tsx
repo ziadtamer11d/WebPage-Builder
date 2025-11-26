@@ -603,7 +603,7 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
     return (
       <div>
         {/* Toggles Row */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-6 flex-wrap">
           <div>
             <Label className="mb-2 block">Display Mode</Label>
             <div className="relative w-fit rounded-full border bg-muted p-1">
@@ -660,8 +660,143 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
               </div>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="tabbed-mode"
+              checked={config.tabbedMode || false}
+              onCheckedChange={(checked) => {
+                const newConfig = { 
+                  ...config, 
+                  tabbedMode: checked,
+                  tabs: checked ? (config.tabs || [
+                    { name: "Tab 1", categoryNumber: "", objectIds: "" },
+                    { name: "Tab 2", categoryNumber: "", objectIds: "" }
+                  ]) : undefined
+                }
+                setConfig(newConfig)
+                if (checked) {
+                  setSelectedIndex(0)
+                }
+              }}
+            />
+            <Label htmlFor="tabbed-mode">Tabbed Showroom</Label>
+          </div>
         </div>
-        {config.mode === "title" ? (
+        {config.tabbedMode ? (
+          <div className="flex h-full w-full">
+            {/* Left Sidebar - 20% width */}
+            <div className="w-1/5 border-r bg-gray-50 flex flex-col min-h-[500px]">
+              <div className="p-4 border-b">
+                <Button
+                  onClick={() => {
+                    const newTabs = [...(config.tabs || []), { name: `Tab ${(config.tabs?.length || 0) + 1}`, categoryNumber: "", objectIds: "" }]
+                    setConfig({ ...config, tabs: newTabs })
+                    setSelectedIndex(newTabs.length - 1)
+                  }}
+                  size="sm"
+                  className="w-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Tab
+                </Button>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {(config.tabs || []).map((tab: any, index: number) => (
+                  <div
+                    key={index}
+                    className={`mb-2 p-3 rounded border cursor-pointer transition-colors ${
+                      selectedIndex === index
+                        ? "bg-blue-100 border-blue-300"
+                        : "bg-white border-gray-200 hover:bg-gray-50"
+                    }`}
+                    onClick={() => setSelectedIndex(index)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium truncate">
+                        {tab.name || `Tab ${index + 1}`}
+                      </span>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          const newTabs = config.tabs?.filter((_: any, i: number) => i !== index)
+                          setConfig({ ...config, tabs: newTabs })
+                          if (selectedIndex >= (newTabs?.length || 0)) {
+                            setSelectedIndex(Math.max(0, (newTabs?.length || 1) - 1))
+                          }
+                        }}
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* Right Content - 80% width */}
+            <div className="flex-1 flex flex-col">
+              <div className="flex-1 p-6 overflow-y-auto">
+                {config.mode === "title" && (
+                  <div className="mb-6">
+                    <Label htmlFor="showroom-title">Showroom Title</Label>
+                    <Input
+                      id="showroom-title"
+                      value={config.title || ""}
+                      onChange={(e) => setConfig({ ...config, title: e.target.value })}
+                      placeholder="Enter showroom title"
+                    />
+                  </div>
+                )}
+                {config.tabs && config.tabs[selectedIndex] && (
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold">Edit Tab {selectedIndex + 1}</h3>
+                    <div>
+                      <Label htmlFor="tab-name">Tab Name</Label>
+                      <Input
+                        id="tab-name"
+                        value={config.tabs[selectedIndex]?.name || ""}
+                        onChange={(e) => {
+                          const newTabs = [...(config.tabs || [])]
+                          newTabs[selectedIndex] = { ...newTabs[selectedIndex], name: e.target.value }
+                          setConfig({ ...config, tabs: newTabs })
+                        }}
+                        placeholder="e.g., Tops, Bottoms, Shoes"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="tab-category">Category Number</Label>
+                      <Input
+                        id="tab-category"
+                        value={config.tabs[selectedIndex]?.categoryNumber || ""}
+                        onChange={(e) => {
+                          const newTabs = [...(config.tabs || [])]
+                          newTabs[selectedIndex] = { ...newTabs[selectedIndex], categoryNumber: e.target.value }
+                          setConfig({ ...config, tabs: newTabs })
+                        }}
+                        placeholder="Enter category number"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="tab-object-ids">Object IDs (comma-separated)</Label>
+                      <Input
+                        id="tab-object-ids"
+                        value={config.tabs[selectedIndex]?.objectIds || ""}
+                        onChange={(e) => {
+                          const newTabs = [...(config.tabs || [])]
+                          newTabs[selectedIndex] = { ...newTabs[selectedIndex], objectIds: e.target.value }
+                          setConfig({ ...config, tabs: newTabs })
+                        }}
+                        placeholder="Enter object IDs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : config.mode === "title" ? (
           <div>
             <Label htmlFor="title">Title</Label>
             <Input
@@ -769,24 +904,28 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
             </div>
           </div>
         )}
-        <div>
-          <Label htmlFor="category">Category Number</Label>
-          <Input
-            id="category"
-            value={config.categoryNumber || ""}
-            onChange={(e) => setConfig({ ...config, categoryNumber: e.target.value })}
-            placeholder="Enter category number"
-          />
-        </div>
-        <div>
-          <Label htmlFor="object-ids">Object IDs (comma-separated)</Label>
-          <Input
-            id="object-ids"
-            value={config.objectIds || ""}
-            onChange={(e) => setConfig({ ...config, objectIds: e.target.value })}
-            placeholder="Enter object IDs"
-          />
-        </div>
+        {!config.tabbedMode && (
+          <>
+            <div>
+              <Label htmlFor="category">Category Number</Label>
+              <Input
+                id="category"
+                value={config.categoryNumber || ""}
+                onChange={(e) => setConfig({ ...config, categoryNumber: e.target.value })}
+                placeholder="Enter category number"
+              />
+            </div>
+            <div>
+              <Label htmlFor="object-ids">Object IDs (comma-separated)</Label>
+              <Input
+                id="object-ids"
+                value={config.objectIds || ""}
+                onChange={(e) => setConfig({ ...config, objectIds: e.target.value })}
+                placeholder="Enter object IDs"
+              />
+            </div>
+          </>
+        )}
       </div>
     )
   }

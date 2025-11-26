@@ -348,67 +348,136 @@ function extractComponentConfig(html: string, type: string): any {
       break
 
     case "products-showroom":
-      config.mode = html.includes('showroom-heading') ? "title" : "image"
+      // Check if it's a tabbed showroom
+      const isTabbedShowroom = html.includes('showroom-buttons-list') || html.includes('x-data="{ activeTab:')
+      config.tabbedMode = isTabbedShowroom
 
-      // Detect direction from container class
-      config.direction = html.includes('showroom-container-rtl') ? "rtl" : "ltr"
-
-      if (config.mode === "title") {
+      if (isTabbedShowroom) {
+        // Parse tabbed showroom
         const titleMatch = html.match(/<h2[^>]*id="showroom-title"[^>]*>([\s\S]*?)<\/h2>/)
         config.title = titleMatch ? titleMatch[1].trim() : ""
+        config.mode = "title"
+        config.direction = html.includes('showroom-container-rtl') ? "rtl" : "ltr"
+
+        // Extract tabs
+        const tabs: any[] = []
+        const buttonMatches = html.matchAll(/<button[^>]*class="showroom-button"[^>]*>([\s\S]*?)<\/button>/g)
+        const tabNames = Array.from(buttonMatches).map(match => match[1].trim())
+
+        // Find each tab's content
+        tabNames.forEach((tabName) => {
+          const tabSection = html.match(new RegExp(`<!-- ${tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} Tab -->([\\s\\S]*?)(?=<!-- \\w+ Tab -->|<!-- Tabbed Showroom End -->)`, 'i'))
+          
+          if (tabSection) {
+            const tabHtml = tabSection[1]
+            let categoryNumber = ""
+            let objectIds = ""
+
+            // Try different product function patterns
+            let intersectMatch = tabHtml.match(/x-intersect[^"]*"[^"]*(?:getProductsFromCategory|getDiscountedProductsFromCategory)\((\d+),\s*['"]?(\d+)['"]?(?:,\s*\[(.*?)\])?\)/);
+            if (intersectMatch) {
+              categoryNumber = intersectMatch[2]
+              objectIds = intersectMatch[3] ? intersectMatch[3].split(',')
+                .map((id: string) => id.trim())
+                .filter((id: string) => id)
+                .map((id: string) => id.replace(/['"]/g, ''))
+                .join(',') : ""
+            } else {
+              intersectMatch = tabHtml.match(/x-intersect[^"]*"[^"]*getProductsManual\(\[(.*?)\]\)/);
+              if (intersectMatch) {
+                categoryNumber = ""
+                objectIds = intersectMatch[1] ? intersectMatch[1].split(',')
+                  .map((id: string) => id.trim())
+                  .filter((id: string) => id)
+                  .map((id: string) => id.replace(/['"]/g, ''))
+                  .join(',') : ""
+              }
+            }
+
+            tabs.push({
+              name: tabName,
+              categoryNumber,
+              objectIds
+            })
+          }
+        })
+
+        config.tabs = tabs
       } else {
-        const bannerConfig: any = {}
+        // Parse regular showroom
+        config.direction = html.includes('showroom-container-rtl') ? "rtl" : "ltr"
+
+        // Detect mode by checking for banner images first
+        const hasBannerImages = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
+        const titleMatch = html.match(/<h2[^>]*id="showroom-title"[^>]*>([\s\S]*?)<\/h2>/)
+        const titleText = titleMatch ? titleMatch[1].trim() : ""
         
-        // Try to extract from x-data attribute first
-        const xDataMatch = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
-        const xDataMobileMatch = html.match(/x-data=["'][^"']*mobileBannerImage:\s*['"]([^'"]*)['"]/);
-        const xDataAltMatch = html.match(/x-data=["'][^"']*bannerAlt:\s*['"]([^'"]*)['"]/);
-        
-        if (xDataMatch || xDataMobileMatch) {
-          bannerConfig.desktopImage = xDataMatch ? xDataMatch[1] : ""
-          bannerConfig.mobileImage = xDataMobileMatch ? xDataMobileMatch[1] : bannerConfig.desktopImage
-          bannerConfig.altText = xDataAltMatch ? xDataAltMatch[1] : ""
-        } else {
-          // Fallback to parsing from img tags
-          const desktopImageMatch = html.match(/showroom-desktop-banner[\s\S]*?<img[^>]*:?alt="([^"]*)"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
-          if (desktopImageMatch) {
-            bannerConfig.altText = desktopImageMatch[1]
-            bannerConfig.desktopImage = desktopImageMatch[2]
+        // If has banner images OR no title text, it's image mode
+        if (hasBannerImages || (html.includes('showroom-heading') && !titleText)) {
+          config.mode = "image"
+          
+          const bannerConfig: any = {}
+          
+          // Try to extract from x-data attribute first
+          const xDataMatch = html.match(/x-data=["'][^"']*desktopBannerImage:\s*['"]([^'"]*)['"]/);
+          const xDataMobileMatch = html.match(/x-data=["'][^"']*mobileBannerImage:\s*['"]([^'"]*)['"]/);
+          const xDataAltMatch = html.match(/x-data=["'][^"']*bannerAlt:\s*['"]([^'"]*)['"]/);
+          
+          if (xDataMatch || xDataMobileMatch) {
+            bannerConfig.desktopImage = xDataMatch ? xDataMatch[1] : ""
+            bannerConfig.mobileImage = xDataMobileMatch ? xDataMobileMatch[1] : bannerConfig.desktopImage
+            bannerConfig.altText = xDataAltMatch ? xDataAltMatch[1] : ""
+          } else {
+            // Fallback to parsing from img tags
+            const desktopImageMatch = html.match(/showroom-desktop-banner[\s\S]*?<img[^>]*:?alt="([^"]*)"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
+            if (desktopImageMatch) {
+              bannerConfig.altText = desktopImageMatch[1]
+              bannerConfig.desktopImage = desktopImageMatch[2]
+            }
+            
+            const mobileImageMatch = html.match(/showroom-mobile-banner[\s\S]*?<img[^>]*:?alt="[^"]*"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
+            bannerConfig.mobileImage = mobileImageMatch ? mobileImageMatch[1] : bannerConfig.desktopImage
           }
           
-          const mobileImageMatch = html.match(/showroom-mobile-banner[\s\S]*?<img[^>]*:?alt="[^"]*"[^>]*:?src="([^"]*)"[^>]*class="showroom-banner-image"/);
-          bannerConfig.mobileImage = mobileImageMatch ? mobileImageMatch[1] : bannerConfig.desktopImage
+          // Try multiple patterns to find the banner link
+          let bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
+          if (!bannerLinkMatch) {
+            // Try alternative pattern - link might be before template tag
+            bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-desktop-banner/);
+          }
+          const fullBannerLink = bannerLinkMatch ? bannerLinkMatch[1] : ""
+          const bannerUtmParams = parseUTMFromURL(fullBannerLink)
+          bannerConfig.linkUrl = removeUTMFromURL(fullBannerLink)
+          bannerConfig.utmSource = bannerUtmParams.utmSource || ""
+          bannerConfig.campaignName = bannerUtmParams.campaignName || ""
+          
+          config.bannerConfig = bannerConfig
+        } else {
+          // Title mode
+          config.mode = "title"
+          config.title = titleText
         }
-        
-        const bannerLinkMatch = html.match(/<a[^>]*href="([^"]*)"[^>]*>[\s\S]*?showroom-banner-wrapper/);
-        const fullBannerLink = bannerLinkMatch ? bannerLinkMatch[1] : ""
-        const bannerUtmParams = parseUTMFromURL(fullBannerLink)
-        bannerConfig.linkUrl = removeUTMFromURL(fullBannerLink)
-        bannerConfig.utmSource = bannerUtmParams.utmSource || ""
-        bannerConfig.campaignName = bannerUtmParams.campaignName || ""
-        
-        config.bannerConfig = bannerConfig
-      }
 
-      // Try to match different product function patterns
-      let intersectMatch = html.match(/x-intersect[^"]*"[^"]*getProductsFromCategory\((\d+),\s*['"]?(\d+)['"]?(?:,\s*\[(.*?)\])?\)/);
-      if (intersectMatch) {
-        config.categoryNumber = intersectMatch[2]
-        config.objectIds = intersectMatch[3] ? intersectMatch[3].split(',')
-          .map(id => id.trim())
-          .filter(id => id)
-          .map(id => id.replace(/['"]/g, ''))
-          .join(',') : ""
-      } else {
-        // Try to match getProductsManual
-        intersectMatch = html.match(/x-intersect[^"]*"[^"]*getProductsManual\(\[(.*?)\]\)/);
+        // Try to match different product function patterns (including getDiscountedProductsFromCategory)
+        let intersectMatch = html.match(/x-intersect[^"]*"[^"]*(?:getProductsFromCategory|getDiscountedProductsFromCategory)\((\d+),\s*['"]?(\d+)['"]?(?:,\s*\[(.*?)\])?\)/);
         if (intersectMatch) {
-          config.categoryNumber = ""
-          config.objectIds = intersectMatch[1] ? intersectMatch[1].split(',')
+          config.categoryNumber = intersectMatch[2]
+          config.objectIds = intersectMatch[3] ? intersectMatch[3].split(',')
             .map(id => id.trim())
             .filter(id => id)
             .map(id => id.replace(/['"]/g, ''))
             .join(',') : ""
+        } else {
+          // Try to match getProductsManual
+          intersectMatch = html.match(/x-intersect[^"]*"[^"]*getProductsManual\(\[(.*?)\]\)/);
+          if (intersectMatch) {
+            config.categoryNumber = ""
+            config.objectIds = intersectMatch[1] ? intersectMatch[1].split(',')
+              .map(id => id.trim())
+              .filter(id => id)
+              .map(id => id.replace(/['"]/g, ''))
+              .join(',') : ""
+          }
         }
       }
 

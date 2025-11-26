@@ -286,6 +286,15 @@ document.addEventListener("alpine:init", () => {
         assetsToInject = this.defaultAssets
       }
 
+      // Always ensure critical showroom CSS is included
+      const hasShowroomCss = assetsToInject.some(asset => asset.id === 'showroom-css')
+      if (!hasShowroomCss) {
+        const showroomCss = this.defaultAssets.find(asset => asset.id === 'showroom-css')
+        if (showroomCss) {
+          assetsToInject.push(showroomCss)
+        }
+      }
+
       // Inject all assets
       assetsToInject.forEach((asset) => {
         this.addAsset(asset)
@@ -305,20 +314,46 @@ document.addEventListener("alpine:init", () => {
       // Inject inline CSS
       const inlineCss = localStorage.getItem("custom_inline_css")
       if (inlineCss && !document.getElementById("custom-inline-css")) {
-        const styleElement = document.createElement("style")
-        styleElement.id = "custom-inline-css"
-        styleElement.innerHTML = inlineCss
-        document.head.appendChild(styleElement)
+        try {
+          // Validate that the content doesn't contain script tags
+          if (inlineCss.includes('<script') || inlineCss.includes('</script>')) {
+            console.warn("Custom inline CSS contains script tags, skipping injection")
+            localStorage.removeItem("custom_inline_css")
+            return
+          }
+          
+          const styleElement = document.createElement("style")
+          styleElement.id = "custom-inline-css"
+          styleElement.innerHTML = inlineCss
+          document.head.appendChild(styleElement)
+        } catch (error) {
+          console.error("Error injecting custom inline CSS:", error)
+          // Clear corrupted data
+          localStorage.removeItem("custom_inline_css")
+        }
       }
 
       // Inject inline JS
       const inlineJs = localStorage.getItem("custom_inline_js")
       if (inlineJs && !document.getElementById("custom-inline-js")) {
-        const scriptElement = document.createElement("script")
-        scriptElement.type = "text/javascript"
-        scriptElement.id = "custom-inline-js"
-        scriptElement.innerHTML = inlineJs
-        document.head.appendChild(scriptElement)
+        try {
+          // Validate that the content doesn't contain HTML tags that would break
+          if (inlineJs.includes('<') && (inlineJs.includes('</') || inlineJs.includes('/>'))) {
+            console.warn("Custom inline JS contains HTML tags, skipping injection")
+            localStorage.removeItem("custom_inline_js")
+            return
+          }
+          
+          const scriptElement = document.createElement("script")
+          scriptElement.type = "text/javascript"
+          scriptElement.id = "custom-inline-js"
+          scriptElement.innerHTML = inlineJs
+          document.head.appendChild(scriptElement)
+        } catch (error) {
+          console.error("Error injecting custom inline JS:", error)
+          // Clear corrupted data
+          localStorage.removeItem("custom_inline_js")
+        }
       }
 
       // Add preview-only initialization script

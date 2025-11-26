@@ -203,6 +203,8 @@ class ComponentRegistryClass {
         categoryNumber: "",
         objectIds: "",
         direction: "ltr",
+        tabbedMode: false,
+        tabs: [],
         bannerConfig: {
           desktopImage: "",
           mobileImage: "",
@@ -213,13 +215,103 @@ class ComponentRegistryClass {
         }
       },
       generateHTML: (config) => {
-        const objectIDsArray = config.objectIds ? config.objectIds.split(",").map((id: string) => `'${id.trim()}'`) : []
         const currency = settingsModel.getCurrency()
         const isRTL = config.direction === "rtl"
 
         if (!currency) {
           return "<!-- Error: No currency settings found -->"
         }
+
+        // If tabbed mode is enabled, generate tabbed showroom
+        if (config.tabbedMode && config.tabs && Array.isArray(config.tabs) && config.tabs.length > 0) {
+          const firstTabName = (config.tabs[0]?.name || 'Tab 1').replace(/'/g, "\\'")
+          const containerClass = isRTL ? 'showroom-container showroom-container-rtl' : 'showroom-container'
+          const trackClass = config.mode === "title" ? 'no-image-track' : 'showroom-products-track'
+          const arrowClass = config.mode === "title" ? 'left_no_image_arrow' : 'left_showroom_arrow'
+          const arrowClassRight = config.mode === "title" ? 'right_no_image_arrow' : 'right_showroom_arrow'
+
+          // Generate tab buttons
+          const tabButtons = config.tabs.map((tab: any) => {
+            const tabName = (tab.name || 'Tab').replace(/'/g, "\\'")
+            return `            <li><button :class="{ 'active': activeTab === '${tabName}' }" @click="activeTab = '${tabName}'" class="showroom-button">${tabName}</button></li>`
+          }).join('\n')
+
+          // Generate tab content for each tab
+          const tabContents = config.tabs.map((tab: any) => {
+            const tabName = (tab.name || 'Tab').replace(/'/g, "\\'")
+            const objectIDsArray = tab.objectIds ? tab.objectIds.split(",").map((id: string) => `'${id.trim()}'`) : []
+            
+            let productFunctionCall = ""
+            if (tab.categoryNumber && objectIDsArray.length > 0) {
+              productFunctionCall = `getProductsFromCategory(10, ${tab.categoryNumber}, [${objectIDsArray.join(", ")}])`
+            } else if (tab.categoryNumber) {
+              productFunctionCall = `getProductsFromCategory(10, ${tab.categoryNumber}, [])`
+            } else if (objectIDsArray.length > 0) {
+              productFunctionCall = `getProductsManual([${objectIDsArray.join(", ")}])`
+            }
+
+            return `        <!-- ${tabName} Tab -->
+        <div class="${containerClass}" x-show="activeTab === '${tabName}'">
+            <div class="showroom-products-wrapper">
+                <div class="swiper-button-prev ${arrowClass} showroom_arrow"></div>
+                <div class="swiper-button-next ${arrowClassRight} showroom_arrow"></div>
+                <div class="showroom-products-container">
+                    <section x-data="products" x-intersect.once.margin.300px="${productFunctionCall}">
+                        <div class="showroom-products-container ${trackClass}" style="display: flex;">
+                            <template x-for="product in products">
+                                <div class="product--card">
+                                    <a :href="product.url" style="text-decoration: none; color: black;">
+                                        <div class="product-picture-wrapper">
+                                            <span>
+                                                <img class="product-picture" :alt="product.product_name" :src="updateImageUrl(product.image_url)" loading="lazy" />
+                                            </span>
+                                        </div>
+                                        <div x-show="product.percentoff > 0" class="discount-percentage">
+                                            <span x-text="product.percentoff.toFixed(0) + '% OFF'"></span>
+                                        </div>
+                                        <div class="product-details-wrapper">
+                                            <div>
+                                                <div class="product-price-wrapper">
+                                                    <div class="product-price-container">
+                                                        <div class="vp-price">
+                                                            <span class="product-price" :class="{'discounted': product.percentoff > 0}" x-text="product.prix.toFixed(2) + ' ${currency}'"></span>
+                                                            <span x-show="product.percentoff > 0" class="product-original-price" x-text="product.regular.toFixed(2) + ' ${currency}'"></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="product-brand-wrapper">
+                                                    <span class="product-brand" x-text="product.brand"></span>
+                                                </div>
+                                                <div class="product-name" x-text="product.product_name"></div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>`
+          }).join('\n\n')
+
+          return `<!-- Tabbed Showroom Start -->
+<div x-data="{ activeTab: '${firstTabName}' }">
+    <div class="showroom-heading">
+        <h2 id="showroom-title">${config.title || 'Products'}</h2>
+        <ul class="showroom-buttons-list">
+${tabButtons}
+        </ul>
+    </div>
+    <div class="component-container">
+${tabContents}
+    </div>
+</div>
+<!-- Tabbed Showroom End -->`
+        }
+
+        // Regular (non-tabbed) showroom
+        const objectIDsArray = config.objectIds ? config.objectIds.split(",").map((id: string) => `'${id.trim()}'`) : []
 
         let productFunctionCall = ""
         if (config.categoryNumber && objectIDsArray.length > 0) {
@@ -387,7 +479,7 @@ class ComponentRegistryClass {
         ]
       },
       generateHTML: (config) => {
-        const itemsHTML = (config.items || []).map(item => `
+        const itemsHTML = (config.items || []).map((item: any) => `
     <li class="info-grid-list-item">
       <div class="info-grid-list-item-icon">
         <img src="${item.icon}" class="info-grid-list-item-icon-image" />
@@ -396,7 +488,7 @@ class ComponentRegistryClass {
         <div class="info-grid-list-item-title">
           ${item.title}
         </div>
-        ${(item.subtitles || []).map(sub => `<div class="info-grid-list-item-subtitle">${sub}</div>`).join("")}
+        ${(item.subtitles || []).map((sub: any) => `<div class="info-grid-list-item-subtitle">${sub}</div>`).join("")}
       </div>
     </li>`).join("")
         return `<!--Info Grid Section Start -->
@@ -420,7 +512,7 @@ class ComponentRegistryClass {
         ]
       },
       generateHTML: (config) => {
-        const faqsHTML = (config.faqs || []).map(faq => `
+        const faqsHTML = (config.faqs || []).map((faq: any) => `
         <details class="question-wrapper">
           <summary class="question-text">
             ${faq.question}
