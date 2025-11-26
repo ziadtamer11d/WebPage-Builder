@@ -300,7 +300,7 @@ document.addEventListener("alpine:init", () => {
       
       updateGridStyle() {
         const columns = this.products.length;
-        this.gridStyle = \`grid-template-columns: repeat(\${columns}, 1fr);\`;
+        this.gridStyle = 'grid-template-columns: repeat(' + columns + ', 1fr);';
       },
     }));
   }
