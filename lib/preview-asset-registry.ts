@@ -161,6 +161,11 @@ window.getProductsFromCategory = function(prodCount, categoryNumber, priorityObj
     })
     .then(({ hits: priorityHits }) => {
       if (priorityObjectIDs.length) {
+        // Reorder priorityHits to match priorityObjectIDs order
+        const orderedPriorityHits = priorityObjectIDs
+          .map((id) => priorityHits.find((hit) => hit.objectID === id))
+          .filter(Boolean);
+        
         return indexAlg
           .search("", {
             filters: \`category = \${categoryNumber}\`,
@@ -172,7 +177,7 @@ window.getProductsFromCategory = function(prodCount, categoryNumber, priorityObj
             );
 
             return [
-              ...priorityHits,
+              ...orderedPriorityHits,
               ...uniqueCategoryHits,
             ].slice(0, prodCount);
           });
@@ -204,6 +209,11 @@ window.getDiscountedProductsFromCategory = function(prodCount, categoryNumber, p
     })
     .then(({ hits: priorityHits }) => {
       if (priorityObjectIDs.length) {
+        // Reorder priorityHits to match priorityObjectIDs order
+        const orderedPriorityHits = priorityObjectIDs
+          .map((id) => priorityHits.find((hit) => hit.objectID === id))
+          .filter(Boolean);
+        
         return indexAlg
           .search("", {
             filters: \`category = \${categoryNumber} AND percentoff > 0\`,
@@ -215,7 +225,7 @@ window.getDiscountedProductsFromCategory = function(prodCount, categoryNumber, p
             );
 
             return [
-              ...priorityHits,
+              ...orderedPriorityHits,
               ...uniqueCategoryHits,
             ].slice(0, prodCount);
           });
@@ -227,6 +237,31 @@ window.getDiscountedProductsFromCategory = function(prodCount, categoryNumber, p
     });
 };
 
+window.getProductsManual = function(productsArr) {
+  const settings = window.settingsModel?.getSettings() || {};
+  const clientAlg = algoliasearch(
+    settings.app_id,
+    settings.api_search_key
+  );
+  const indexAlg = clientAlg.initIndex(settings.index_name);
+  
+  const filters = productsArr.map((id) => \`objectID:\${id}\`).join(" OR ");
+  
+  return indexAlg
+    .search("", {
+      filters: filters,
+      analytics: false,
+      hitsPerPage: productsArr.length
+    })
+    .then(({ hits }) => {
+      // CRITICAL: Reorder hits to match the input productsArr order
+      const orderedHits = productsArr.map((id) =>
+        hits.find((hit) => hit.objectID === id)
+      );
+      return orderedHits.filter(Boolean);
+    });
+};
+
 window.updateImageUrl = function(url) {
   if (!url) return '';
   // Add any image URL transformation logic here if needed
@@ -234,7 +269,41 @@ window.updateImageUrl = function(url) {
 };
 
 document.addEventListener("alpine:init", () => {
-  // Register any additional Alpine.js components or data here if needed
+  if (typeof Alpine !== 'undefined') {
+    Alpine.data("products", () => ({
+      products: [],
+      gridStyle: "",
+      
+      getProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs = []) {
+        window.getProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs)
+          .then((products) => {
+            this.products = products;
+            this.updateGridStyle();
+          });
+      },
+      
+      getDiscountedProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs = []) {
+        window.getDiscountedProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs)
+          .then((products) => {
+            this.products = products;
+            this.updateGridStyle();
+          });
+      },
+      
+      getProductsManual(productsArr) {
+        window.getProductsManual(productsArr)
+          .then((products) => {
+            this.products = products;
+            this.updateGridStyle();
+          });
+      },
+      
+      updateGridStyle() {
+        const columns = this.products.length;
+        this.gridStyle = \`grid-template-columns: repeat(\${columns}, 1fr);\`;
+      },
+    }));
+  }
 });
 </script>`
 
