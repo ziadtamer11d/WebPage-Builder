@@ -132,10 +132,8 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       .map(code => code.trim())
       .filter(code => code.length > 0)
     
-    // Remove duplicates while preserving order (Set maintains insertion order in ES6+)
+    // Remove duplicates while preserving order
     const modelCodes = [...new Set(modelCodesArray)]
-    
-    console.log('Model codes in order:', modelCodes)
 
     if (modelCodes.length === 0) {
       alert('No valid model codes found')
@@ -156,36 +154,39 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
       const clientAlg = (window as any).algoliasearch(settings.app_id, settings.api_search_key)
       const indexAlg = clientAlg.initIndex(settings.index_name)
 
+      // Build filter for ALL model codes at once (much faster than individual queries)
+      const modelCodeFilters = modelCodes.map(code => `id_code_model:"${code}"`).join(' OR ')
+      
+      // Single search query for all products
+      const searchResult = await indexAlg.search('', {
+        filters: modelCodeFilters,
+        hitsPerPage: 1000,
+        analytics: false,
+        getRankingInfo: false,
+      })
+      
+      // Create a map of model code to product for fast lookup
+      const productMap = new Map<string, Product>()
+      searchResult.hits.forEach((hit: Product) => {
+        if (hit.id_code_model) {
+          productMap.set(hit.id_code_model, hit)
+        }
+      })
+      
+      // Reorder products to match the exact input order
       const foundProductsTemp: Product[] = []
       const notFoundCodesTemp: string[] = []
-      const processedObjectIDs = new Set<string>()
-
-      for (const modelCode of modelCodes) {
-        try {
-          const searchResult = await indexAlg.search('', {
-            filters: `id_code_model:"${modelCode}"`,
-            hitsPerPage: 1,
-            analytics: false,
-          })
-
-          if (searchResult.hits && searchResult.hits.length > 0) {
-            const hit = searchResult.hits[0] as Product
-            if (!processedObjectIDs.has(hit.objectID)) {
-              foundProductsTemp.push(hit)
-              processedObjectIDs.add(hit.objectID)
-            }
-          } else {
-            notFoundCodesTemp.push(modelCode)
-          }
-        } catch (error) {
-          console.error(`Error searching for model ${modelCode}:`, error)
+      
+      modelCodes.forEach(modelCode => {
+        const product = productMap.get(modelCode)
+        if (product) {
+          foundProductsTemp.push(product)
+        } else {
           notFoundCodesTemp.push(modelCode)
         }
-      }
+      })
 
       const initialOrder = foundProductsTemp.map(p => p.objectID)
-      console.log('Found products in order:', foundProductsTemp.map(p => p.id_code_model))
-      console.log('ObjectIDs in order:', initialOrder)
       
       setFoundProducts(foundProductsTemp)
       setProductOrder(initialOrder) // Initialize order based on search order
@@ -354,12 +355,7 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
 
   const copyObjectIDs = () => {
     const ids = filteredProducts.map(p => p.objectID).join(',')
-    console.log('=== COPYING OBJECT IDS ===')
-    console.log('Current productOrder:', productOrder)
-    console.log('Current orderedProducts:', orderedProducts.map(p => p.objectID))
-    console.log('Current filteredProducts:', filteredProducts.map(p => p.objectID))
-    console.log('COPYING TO CLIPBOARD:', ids)
-    console.log('======================')
+    console.log('Copying ObjectIDs:', ids)
     navigator.clipboard.writeText(ids).then(() => {
       setCopiedState('objectids')
       setTimeout(() => setCopiedState('idle'), 2000)
@@ -399,25 +395,17 @@ export function ModelConverterDialog({ isOpen, onClose }: ModelConverterDialogPr
     e.preventDefault()
     if (draggedIndex === null || draggedIndex === index) return
     
-    console.log('=== DRAG OPERATION ===')
-    console.log('Visual drag from index', draggedIndex, 'to index', index)
+    // Reorder the productOrder array
+    const newOrder = [...productOrder]
+    const draggedId = filteredProducts[draggedIndex].objectID
+    const targetId = filteredProducts[index].objectID
     
-    // Simple approach: reorder the filtered products array directly
-    const reorderedFiltered = [...filteredProducts]
-    const [draggedItem] = reorderedFiltered.splice(draggedIndex, 1)
-    reorderedFiltered.splice(index, 0, draggedItem)
+    const draggedPos = newOrder.indexOf(draggedId)
+    const targetPos = newOrder.indexOf(targetId)
     
-    console.log('Reordered filtered products:', reorderedFiltered.map(p => p.objectID))
-    
-    // Get IDs of filtered products in new order
-    const filteredIds = new Set(reorderedFiltered.map(p => p.objectID))
-    
-    // Create new productOrder: non-filtered items + reordered filtered items
-    const nonFilteredIds = productOrder.filter(id => !filteredIds.has(id))
-    const newOrder = [...reorderedFiltered.map(p => p.objectID), ...nonFilteredIds]
-    
-    console.log('New complete order:', newOrder)
-    console.log('Will copy as:', reorderedFiltered.map(p => p.objectID).join(','))
+    // Remove and reinsert
+    newOrder.splice(draggedPos, 1)
+    newOrder.splice(targetPos, 0, draggedId)
     
     setProductOrder(newOrder)
     setDraggedIndex(index)
