@@ -116,16 +116,6 @@ class PreviewAssetRegistryClass {
 
   private customScript = `<script>
 document.addEventListener("DOMContentLoaded", function() {
-  // Get settings from the settings model
-  const settings = window.settingsModel?.getSettings() || {};
-  
-  // Initialize Algolia details from settings
-  window.algoliaDetails = {
-    app_id: settings.app_id,
-    api_search_key: settings.api_search_key,
-    index_name: settings.index_name
-  };
-
   const tracks = document.querySelectorAll(".showroom-products-track");
   const leftShowroomArrows = document.querySelectorAll(".left_showroom_arrow");
   const rightShowroomArrows = document.querySelectorAll(".right_showroom_arrow");
@@ -136,175 +126,265 @@ document.addEventListener("DOMContentLoaded", function() {
   const rightNoImageArrows = document.querySelectorAll(".right_no_image_arrow");
   const noImageTrackTranslations = Array(noImageTracks.length).fill(0);
 
-  // Rest of the script remains the same
-  // ... existing code ...
+  const setArrowOpacity = (arrow, isVisible) => {
+    arrow.style.opacity = isVisible ? "1" : "0.5";
+    arrow.style.transition = "opacity 0.3s ease";
+  };
+
+  const setArrowDisabled = (arrow, isDisabled) => {
+    if (isDisabled) {
+      arrow.style.pointerEvents = "none"; 
+      arrow.style.cursor = "default";
+      arrow.style.opacity = "0.5"; 
+    } else {
+      arrow.style.pointerEvents = "auto";
+      arrow.style.cursor = "pointer";
+      arrow.style.opacity = "1";
+    }
+  };
+
+  const translateContainer = (track, index, amount, translations, offset, leftArrow, rightArrow) => {
+    const displayWidth = window.innerWidth - offset;
+    const trackWidth = track.offsetWidth;
+    const maxTranslateX = trackWidth - displayWidth;
+
+    translations[index] += amount;
+
+    if (translations[index] >= 0) {
+      translations[index] = 0;
+    } else if (translations[index] < -maxTranslateX) {
+      translations[index] = -maxTranslateX;
+    }
+
+      track.style.transform = \`translateX(\${translations[index]}px)\`
+    track.style.transition = "transform 0.5s ease";
+
+    if (translations[index] === 0) {
+      setArrowOpacity(leftArrow, false);
+      setArrowDisabled(leftArrow, true); 
+    } else {
+      setArrowOpacity(leftArrow, true); 
+      setArrowDisabled(leftArrow, false);
+    }
+
+    if (translations[index] === -maxTranslateX) {
+      setArrowOpacity(rightArrow, false); 
+      setArrowDisabled(rightArrow, true);
+    } else {
+      setArrowOpacity(rightArrow, true); 
+      setArrowDisabled(rightArrow, false);
+    }
+  };
+
+  leftShowroomArrows.forEach((arrow, index) => {
+    setArrowDisabled(arrow, true); 
+    arrow.addEventListener("click", () => {
+      const track = tracks[index];
+      const secondChildWidth = 261;
+      translateContainer(track, index, secondChildWidth, trackTranslations, 416, arrow, rightShowroomArrows[index]);
+    });
+  });
+
+  rightShowroomArrows.forEach((arrow, index) => {
+    arrow.addEventListener("click", () => {
+      const track = tracks[index];
+      const secondChildWidth = 261;
+      translateContainer(track, index, -secondChildWidth, trackTranslations, 416, leftShowroomArrows[index], arrow);
+    });
+  });
+
+  leftNoImageArrows.forEach((arrow, index) => {
+    setArrowDisabled(arrow, true); 
+    arrow.addEventListener("click", () => {
+      const track = noImageTracks[index];
+      const secondChildWidth = 261;
+      translateContainer(track, index, secondChildWidth, noImageTrackTranslations, 91, arrow, rightNoImageArrows[index]);
+    });
+  });
+
+  rightNoImageArrows.forEach((arrow, index) => {
+    arrow.addEventListener("click", () => {
+      const track = noImageTracks[index];
+      const secondChildWidth = 261;
+      translateContainer(track, index, -secondChildWidth, noImageTrackTranslations, 91, leftNoImageArrows[index], arrow);
+    });
+  });
 });
 
-// Define global functions for Alpine.js
-window.getProductsFromCategory = function(prodCount, categoryNumber, priorityObjectIDs = []) {
-  const settings = window.settingsModel?.getSettings() || {};
-  const clientAlg = algoliasearch(
-    settings.app_id,
-    settings.api_search_key
-  );
-  const indexAlg = clientAlg.initIndex(settings.index_name);
-  const objectIDFilters = priorityObjectIDs
-    .map((id) => \`objectID:\${id}\`)
-    .join(" OR ");
-
-  return indexAlg
-    .search("", {
-      filters: objectIDFilters.length
-        ? objectIDFilters
-        : \`category = \${categoryNumber}\`,
-      analytics: false,
-    })
-    .then(({ hits: priorityHits }) => {
-      if (priorityObjectIDs.length) {
-        // Reorder priorityHits to match priorityObjectIDs order
-        const orderedPriorityHits = priorityObjectIDs
-          .map((id) => priorityHits.find((hit) => hit.objectID === id))
-          .filter(Boolean);
-        
-        return indexAlg
-          .search("", {
-            filters: \`category = \${categoryNumber}\`,
-            analytics: false,
-          })
-          .then(({ hits: categoryHits }) => {
-            const uniqueCategoryHits = categoryHits.filter(
-              (hit) => !priorityObjectIDs.includes(hit.objectID)
-            );
-
-            return [
-              ...orderedPriorityHits,
-              ...uniqueCategoryHits,
-            ].slice(0, prodCount);
-          });
-      } else {
-        return priorityHits
-          .sort((a, b) => b.popularity - a.popularity)
-          .slice(0, prodCount);
-      }
-    });
+const algoliaDetails = {
+  get app_id() { return window.settingsModel?.getSettings()?.app_id || 'TR53CBEI82'; },
+  get api_search_key() { return window.settingsModel?.getSettings()?.api_search_key || '98ef65e220d8d74a2dfac7a67f1dba11'; },
+  get index_name() { return window.settingsModel?.getSettings()?.index_name || 'prod_en'; }
 };
 
-window.getDiscountedProductsFromCategory = function(prodCount, categoryNumber, priorityObjectIDs = []) {
-  const settings = window.settingsModel?.getSettings() || {};
-  const clientAlg = algoliasearch(
-    settings.app_id,
-    settings.api_search_key
-  );
-  const indexAlg = clientAlg.initIndex(settings.index_name);
-  const objectIDFilters = priorityObjectIDs
-    .map((id) => \`objectID:\${id}\`)
-    .join(" OR ");
+function handleLoadingSliders() {
+  const loadingProducts = document.getElementsByClassName("loading-products");
+  const loadingProductsArr = [...loadingProducts];
+  loadingProductsArr.forEach((e) => {
+    e.remove();
+  });
+}
 
-  return indexAlg
-    .search("", {
-      filters: objectIDFilters.length
-        ? objectIDFilters
-        : \`category = \${categoryNumber} AND percentoff > 0\`,
-      analytics: false,
-    })
-    .then(({ hits: priorityHits }) => {
-      if (priorityObjectIDs.length) {
-        // Reorder priorityHits to match priorityObjectIDs order
-        const orderedPriorityHits = priorityObjectIDs
-          .map((id) => priorityHits.find((hit) => hit.objectID === id))
-          .filter(Boolean);
-        
-        return indexAlg
-          .search("", {
-            filters: \`category = \${categoryNumber} AND percentoff > 0\`,
-            analytics: false,
-          })
-          .then(({ hits: categoryHits }) => {
-            const uniqueCategoryHits = categoryHits.filter(
-              (hit) => !priorityObjectIDs.includes(hit.objectID)
-            );
-
-            return [
-              ...orderedPriorityHits,
-              ...uniqueCategoryHits,
-            ].slice(0, prodCount);
-          });
-      } else {
-        return priorityHits
-          .sort((a, b) => b.popularity - a.popularity)
-          .slice(0, prodCount);
-      }
-    });
-};
-
-window.getProductsManual = function(productsArr) {
-  const settings = window.settingsModel?.getSettings() || {};
-  const clientAlg = algoliasearch(
-    settings.app_id,
-    settings.api_search_key
-  );
-  const indexAlg = clientAlg.initIndex(settings.index_name);
-  
-  const filters = productsArr.map((id) => \`objectID:\${id}\`).join(" OR ");
-  
-  return indexAlg
-    .search("", {
-      filters: filters,
-      analytics: false,
-      hitsPerPage: productsArr.length
-    })
-    .then(({ hits }) => {
-      // CRITICAL: Reorder hits to match the input productsArr order
-      const orderedHits = productsArr.map((id) =>
-        hits.find((hit) => hit.objectID === id)
-      );
-      return orderedHits.filter(Boolean);
-    });
-};
-
-window.updateImageUrl = function(url) {
-  if (!url) return '';
-  // Add any image URL transformation logic here if needed
-  return url;
-};
+function updateImageUrl(url) {
+  const newParams = "format=auto&quality=40&f=400x0";
+  if (url.indexOf("?") > -1) {
+    const urlParts = url.split("?");
+    return \`\${urlParts[0]}?\${newParams}\`;
+  } else {
+    return url;
+  }
+}
 
 document.addEventListener("alpine:init", () => {
-  if (typeof Alpine !== 'undefined') {
     Alpine.data("products", () => ({
       products: [],
       gridStyle: "",
-      
-      getProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs = []) {
-        window.getProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs)
-          .then((products) => {
-            this.products = products;
-            this.updateGridStyle();
-          });
+      getProductsFromCategory(
+        prodCount,
+        categoryNumber,
+        priorityObjectIDs = []
+      ) {
+        const clientAlg = algoliasearch(
+          algoliaDetails.app_id,
+          algoliaDetails.api_search_key
+        );
+        const indexAlg = clientAlg.initIndex(algoliaDetails.index_name);
+        const objectIDFilters = priorityObjectIDs
+        .map((id) => \`objectID:\${id}\`)
+        .join(" OR ");
+
+        indexAlg
+          .search("", {
+          filters: objectIDFilters.length
+          ? objectIDFilters
+          : \`category = \${categoryNumber}\`,
+          analytics: false,
+        })
+          .then(({ hits: priorityHits }) => {
+          if (priorityObjectIDs.length) {
+            // Reorder priorityHits to match priorityObjectIDs order
+            const orderedPriorityHits = priorityObjectIDs
+              .map((id) => priorityHits.find((hit) => hit.objectID === id))
+              .filter(Boolean);
+            
+            indexAlg
+              .search("", {
+              filters: \`category = \${categoryNumber} \`,
+              analytics: false,
+            })
+              .then(({ hits: categoryHits }) => {
+              const uniqueCategoryHits = categoryHits.filter(
+                (hit) => !priorityObjectIDs.includes(hit.objectID)
+              );
+
+              const combinedResults = [
+                ...orderedPriorityHits,
+                ...uniqueCategoryHits,
+              ].slice(0, prodCount);
+
+              this.products = combinedResults;
+              handleLoadingSliders();
+            });
+          } else {
+            const filteredResultsByCategory = priorityHits
+            .sort((a, b) => b.popularity - a.popularity)
+            .slice(0, prodCount);
+
+            this.products = filteredResultsByCategory;
+            handleLoadingSliders();
+          }
+        });
       },
-      
-      getDiscountedProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs = []) {
-        window.getDiscountedProductsFromCategory(prodCount, categoryNumber, priorityObjectIDs)
-          .then((products) => {
-            this.products = products;
-            this.updateGridStyle();
-          });
+      getDiscountedProductsFromCategory(
+        prodCount,
+        categoryNumber,
+        priorityObjectIDs = []
+      ) {
+        const clientAlg = algoliasearch(
+          algoliaDetails.app_id,
+          algoliaDetails.api_search_key
+        );
+        const indexAlg = clientAlg.initIndex(algoliaDetails.index_name);
+
+        const objectIDFilters = priorityObjectIDs
+        .map((id) => \`objectID:\${id}\`)
+        .join(" OR ");
+
+        indexAlg
+          .search("", {
+          filters: objectIDFilters.length
+          ? objectIDFilters
+          : \`category = \${categoryNumber} AND percentoff > 0\`,
+          analytics: false,
+        })
+          .then(({ hits: priorityHits }) => {
+          if (priorityObjectIDs.length) {
+            // Reorder priorityHits to match priorityObjectIDs order
+            const orderedPriorityHits = priorityObjectIDs
+              .map((id) => priorityHits.find((hit) => hit.objectID === id))
+              .filter(Boolean);
+            
+            indexAlg
+              .search("", {
+              filters: \`category = \${categoryNumber} AND percentoff > 0\`,
+              analytics: false,
+            })
+              .then(({ hits: categoryHits }) => {
+              const uniqueCategoryHits = categoryHits.filter(
+                (hit) => !priorityObjectIDs.includes(hit.objectID)
+              );
+
+              const combinedResults = [
+                ...orderedPriorityHits,
+                ...uniqueCategoryHits,
+              ].slice(0, prodCount);
+
+              this.products = combinedResults;
+              handleLoadingSliders();
+            });
+          } else {
+            const filteredResultsByCategory = priorityHits
+            .sort((a, b) => b.popularity - a.popularity)
+            .slice(0, prodCount);
+
+            this.products = filteredResultsByCategory;
+            handleLoadingSliders();
+          }
+        });
       },
-      
       getProductsManual(productsArr) {
-        window.getProductsManual(productsArr)
-          .then((products) => {
-            this.products = products;
-            this.updateGridStyle();
-          });
+        const clientAlg = algoliasearch(
+          algoliaDetails.app_id,
+          algoliaDetails.api_search_key
+        );
+        const indexAlg = clientAlg.initIndex(algoliaDetails.index_name);
+
+        const filters = productsArr.map((id) => \`objectID:\${id}\`).join(" OR ");
+
+        indexAlg
+          .search("", {
+          filters: filters,
+          analytics: false,
+        })
+          .then(({ hits }) => {
+          handleLoadingSliders();
+          const orderedHits = productsArr.map((id) =>
+                                              hits.find((hit) => hit.objectID === id)
+                                             );
+          this.products = orderedHits.filter(Boolean);
+          this.updateGridStyle();
+        })
+          .catch((err) => {
+          // Error handled silently
+        });
       },
-      
+
       updateGridStyle() {
         const columns = this.products.length;
-        this.gridStyle = 'grid-template-columns: repeat(' + columns + ', 1fr);';
+        this.gridStyle = \`grid-template-columns: repeat(\${columns}, 1fr);\`;
       },
     }));
-  }
-});
+  });
 </script>`
 
   addAsset(asset: Asset): boolean {
