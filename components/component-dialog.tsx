@@ -111,6 +111,7 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                     mobileImage: "",
                     altText: "",
                     subtitle: "",
+                    buttonText: "Shop now",
                   },
                 ]
                 setConfig({ ...config, slides: newSlides })
@@ -209,6 +210,19 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                       setConfig({ ...config, slides: newSlides })
                     }}
                     placeholder="Text shown on top of the image"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="button-text">Button Text</Label>
+                  <Input
+                    id="button-text"
+                    value={slides[selectedIndex]?.buttonText || ""}
+                    onChange={(e) => {
+                      const newSlides = [...slides]
+                      newSlides[selectedIndex] = { ...newSlides[selectedIndex], buttonText: e.target.value }
+                      setConfig({ ...config, slides: newSlides })
+                    }}
+                    placeholder="Shop now (leave empty to hide button)"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">

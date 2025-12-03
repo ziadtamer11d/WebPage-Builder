@@ -112,6 +112,7 @@ class PreviewComponentRegistryClass {
             mobileImage: "",
             altText: "",
             subtitle: "",
+            buttonText: "Shop now",
             utmSource: "",
             campaignName: "",
           },
@@ -121,6 +122,7 @@ class PreviewComponentRegistryClass {
             mobileImage: "",
             altText: "",
             subtitle: "",
+            buttonText: "Shop now",
             utmSource: "",
             campaignName: "",
           },
@@ -130,6 +132,7 @@ class PreviewComponentRegistryClass {
             mobileImage: "",
             altText: "",
             subtitle: "",
+            buttonText: "Shop now",
             utmSource: "",
             campaignName: "",
           },
@@ -147,6 +150,9 @@ class PreviewComponentRegistryClass {
             const linkWithUTM = appendUTMToURL(slide.linkUrl, slide.utmSource, slide.campaignName)
             const altText = slide.altText || ""
             const subtitle = slide.subtitle || ""
+            const buttonText = slide.buttonText || ""
+            const subtitleStyle = !subtitle || subtitle.trim() === "" ? 'style="display: none;"' : ""
+            const buttonStyle = !buttonText || buttonText.trim() === "" ? 'style="display: none;"' : ""
             return `
                   <a href="${linkWithUTM}" class="swiper-slide _revamp-slide" role="group" aria-label="${altText}">
                     <div class="slide-link-re">
@@ -155,9 +161,9 @@ class PreviewComponentRegistryClass {
                         alt="${altText}" class="slide-image">
                       <div class="image-gradient-overlay"></div>
                       <div class="slide-content">
-                        <div class="slide-title">${subtitle}</div>
-                        <button class="slide-button" aria-label="${altText}">
-                          <span>Shop now</span>
+                        <div class="slide-title" ${subtitleStyle}>${subtitle}</div>
+                        <button class="slide-button" aria-label="${altText}" ${buttonStyle}>
+                          <span>${buttonText || "Shop now"}</span>
                         </button>
                       </div>
                     </div>
