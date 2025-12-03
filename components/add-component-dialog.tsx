@@ -41,6 +41,14 @@ export function AddComponentDialog({
       category: "content"
     },
     {
+      type: "new-banner",
+      name: "New Banner",
+      description: "Large multi-slide banner with overlay text and CTA",
+      icon: Carousel,
+      preview: "Horizontal banner slider with multiple slides",
+      category: "content"
+    },
+    {
       type: "four-categories",
       name: "Four Categories",
       description: "Grid layout with 4 category images and links",

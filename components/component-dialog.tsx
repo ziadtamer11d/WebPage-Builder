@@ -110,6 +110,7 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                     desktopImage: "",
                     mobileImage: "",
                     altText: "",
+                    subtitle: "",
                   },
                 ]
                 setConfig({ ...config, slides: newSlides })
@@ -197,6 +198,19 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                     placeholder="https://example.com"
                   />
                 </div>
+                <div>
+                  <Label htmlFor="subtitle">Subtitle (overlay text)</Label>
+                  <Input
+                    id="subtitle"
+                    value={slides[selectedIndex]?.subtitle || ""}
+                    onChange={(e) => {
+                      const newSlides = [...slides]
+                      newSlides[selectedIndex] = { ...newSlides[selectedIndex], subtitle: e.target.value }
+                      setConfig({ ...config, slides: newSlides })
+                    }}
+                    placeholder="Text shown on top of the image"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="utm-source">UTM Source {(slides[selectedIndex]?.utmSource || slides[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
@@ -259,19 +273,21 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                     placeholder="https://example.com/desktop.jpg"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="mobile-image">Mobile Image URL</Label>
-                  <Input
-                    id="mobile-image"
-                    value={slides[selectedIndex]?.mobileImage || ""}
-                    onChange={(e) => {
-                      const newSlides = [...slides]
-                      newSlides[selectedIndex] = { ...newSlides[selectedIndex], mobileImage: e.target.value }
-                      setConfig({ ...config, slides: newSlides })
-                    }}
-                    placeholder="https://example.com/mobile.jpg"
-                  />
-                </div>
+                {component.type !== "new-banner" && (
+                  <div>
+                    <Label htmlFor="mobile-image">Mobile Image URL</Label>
+                    <Input
+                      id="mobile-image"
+                      value={slides[selectedIndex]?.mobileImage || ""}
+                      onChange={(e) => {
+                        const newSlides = [...slides]
+                        newSlides[selectedIndex] = { ...newSlides[selectedIndex], mobileImage: e.target.value }
+                        setConfig({ ...config, slides: newSlides })
+                      }}
+                      placeholder="https://example.com/mobile.jpg"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center py-12 text-gray-500">

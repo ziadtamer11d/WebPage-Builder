@@ -25,6 +25,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -33,6 +34,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -41,6 +43,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -108,6 +111,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -116,6 +120,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -124,6 +129,7 @@ class ComponentRegistryClass {
             desktopImage: "",
             mobileImage: "",
             altText: "",
+            subtitle: "",
             utmSource: "",
             campaignName: "",
           },
@@ -133,25 +139,23 @@ class ComponentRegistryClass {
         const slides = config.slides || []
 
         if (!slides.length) {
-          return "<!-- New Banner: No slides configured -->"
+          return "<!-- new banner start --><!-- New Banner: No slides configured --><!-- new banner end -->"
         }
-
-        const bannerId = `main-banner-swiper-${Date.now()}`
 
         const slidesHTML = slides
           .map((slide: any) => {
             const linkWithUTM = appendUTMToURL(slide.linkUrl, slide.utmSource, slide.campaignName)
             const altText = slide.altText || ""
+            const subtitle = slide.subtitle || ""
             return `
-                  <a href="${linkWithUTM}" class="swiper-slide _revamp-slide" aria-label="${altText}">
+                  <a href="${linkWithUTM}" class="swiper-slide _revamp-slide" role="group" aria-label="${altText}">
                     <div class="slide-link-re">
                       <img
                         src="${slide.desktopImage}"
-                        alt="${altText}"
-                        class="slide-image">
+                        alt="${altText}" class="slide-image">
                       <div class="image-gradient-overlay"></div>
                       <div class="slide-content">
-                        <div class="slide-title">${altText}</div>
+                        <div class="slide-title">${subtitle}</div>
                         <button class="slide-button" aria-label="${altText}">
                           <span>Shop now</span>
                         </button>
@@ -161,48 +165,65 @@ class ComponentRegistryClass {
           })
           .join("")
 
-        return `<!-- New Banner Start -->
-<div id="main-banner-slider">
-  <div class="_slider-container">
-    <div class="_slider-inner">
-      <div class="swiper _revamp" id="${bannerId}">
-        <div class="swiper-wrapper">
+        return `<!-- new banner start -->
+<main id="content">
+  <section id="wrapper">
+    <div id="content-wrapper">
+      <!-- Main Banner Slider - Local Scoped Styles (doesn't affect other components) -->
+      <script src="https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/categories_swiper.js"></script>
+      <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+      <!----################ START Mainbanners ################ >
+
+#desktop banner: 2000x666
+
+#tablet banner: 1000x666
+
+#mobil banner: 600x750
+
+-->
+      <div id="main-banner-slider">
+        <div class="_slider-container">
+          <div class="_slider-inner">
+            <div class="swiper _revamp" id="main-banner-swiper">
+              <div class="swiper-wrapper">
 ${slidesHTML}
+              </div>
+              <div class="swiper-button-next"></div>
+              <div class="swiper-button-prev"></div>
+              <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
+            </div>
+          </div>
         </div>
-        <div class="swiper-button-next"></div>
-        <div class="swiper-button-prev"></div>
       </div>
+      <script>
+        // Scoped Swiper initialization - only affects the main banner slider
+        var mainBannerSwiper = new Swiper('#main-banner-swiper', {
+          centeredSlides: true,
+          loop: true,
+          spaceBetween: 20,
+          autoplay: {
+            delay: 4000,
+            disableOnInteraction: false,
+          },
+          navigation: {
+            nextEl: '#main-banner-slider .swiper-button-next',
+            prevEl: '#main-banner-slider .swiper-button-prev',
+          },
+          breakpoints: {
+            1280: { slidesPerView: 3 },
+            1024: { slidesPerView: 2.6 },
+            992: { slidesPerView: 2.2 },
+            720: { slidesPerView: 2 },
+            599: { slidesPerView: 1.6 },
+            500: { slidesPerView: 1.2 },
+            0: { slidesPerView: 1 }
+          }
+        });
+      </script>
     </div>
-  </div>
-</div>
-<script>
-  (function() {
-    if (typeof Swiper === "undefined") return;
-    var mainBannerSwiper = new Swiper('#${bannerId}', {
-      centeredSlides: true,
-      loop: true,
-      spaceBetween: 20,
-      autoplay: {
-        delay: 4000,
-        disableOnInteraction: false,
-      },
-      navigation: {
-        nextEl: '#main-banner-slider .swiper-button-next',
-        prevEl: '#main-banner-slider .swiper-button-prev',
-      },
-      breakpoints: {
-        1280: { slidesPerView: 3 },
-        1024: { slidesPerView: 2.6 },
-        992: { slidesPerView: 2.2 },
-        720: { slidesPerView: 2 },
-        599: { slidesPerView: 1.6 },
-        500: { slidesPerView: 1.2 },
-        0: { slidesPerView: 1 }
-      }
-    });
-  })();
-</script>
-<!-- New Banner End -->`
+  </section>
+</main>
+<!-- new banner end -->`
       },
     })
 
