@@ -69,6 +69,8 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
     switch (component.type) {
       case "swiper":
         return renderSwiperSettings()
+      case "new-banner":
+        return renderSwiperSettings()
       case "four-categories":
         return renderFourCategoriesSettings()
       case "eight-icons":
@@ -680,7 +682,7 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
               }}
             />
             <Label htmlFor="tabbed-mode">Tabbed Showroom</Label>
-          </div>
+        </div>
         </div>
         {config.tabbedMode ? (
           <div className="flex h-full w-full">
@@ -741,7 +743,7 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                 {/* Showroom Title/Banner Configuration */}
                 <div className="mb-6 space-y-4 pb-6 border-b">
                   <h3 className="text-lg font-semibold">Showroom Header</h3>
-                  {config.mode === "title" ? (
+        {config.mode === "title" ? (
                     <div>
                       <Label htmlFor="showroom-title">Showroom Title</Label>
                       <Input
@@ -1009,24 +1011,24 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
         )}
         {!config.tabbedMode && (
           <>
-            <div>
-              <Label htmlFor="category">Category Number</Label>
-              <Input
-                id="category"
-                value={config.categoryNumber || ""}
-                onChange={(e) => setConfig({ ...config, categoryNumber: e.target.value })}
-                placeholder="Enter category number"
-              />
-            </div>
-            <div>
-              <Label htmlFor="object-ids">Object IDs (comma-separated)</Label>
-              <Input
-                id="object-ids"
-                value={config.objectIds || ""}
-                onChange={(e) => setConfig({ ...config, objectIds: e.target.value })}
-                placeholder="Enter object IDs"
-              />
-            </div>
+        <div>
+          <Label htmlFor="category">Category Number</Label>
+          <Input
+            id="category"
+            value={config.categoryNumber || ""}
+            onChange={(e) => setConfig({ ...config, categoryNumber: e.target.value })}
+            placeholder="Enter category number"
+          />
+        </div>
+        <div>
+          <Label htmlFor="object-ids">Object IDs (comma-separated)</Label>
+          <Input
+            id="object-ids"
+            value={config.objectIds || ""}
+            onChange={(e) => setConfig({ ...config, objectIds: e.target.value })}
+            placeholder="Enter object IDs"
+          />
+        </div>
           </>
         )}
       </div>

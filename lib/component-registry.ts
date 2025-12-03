@@ -98,6 +98,114 @@ class ComponentRegistryClass {
       },
     })
 
+    // New Banner Swiper Component
+    this.register("new-banner", {
+      name: "New Banner",
+      defaultConfig: {
+        slides: [
+          {
+            linkUrl: "",
+            desktopImage: "",
+            mobileImage: "",
+            altText: "",
+            utmSource: "",
+            campaignName: "",
+          },
+          {
+            linkUrl: "",
+            desktopImage: "",
+            mobileImage: "",
+            altText: "",
+            utmSource: "",
+            campaignName: "",
+          },
+          {
+            linkUrl: "",
+            desktopImage: "",
+            mobileImage: "",
+            altText: "",
+            utmSource: "",
+            campaignName: "",
+          },
+        ],
+      },
+      generateHTML: (config) => {
+        const slides = config.slides || []
+
+        if (!slides.length) {
+          return "<!-- New Banner: No slides configured -->"
+        }
+
+        const bannerId = `main-banner-swiper-${Date.now()}`
+
+        const slidesHTML = slides
+          .map((slide: any) => {
+            const linkWithUTM = appendUTMToURL(slide.linkUrl, slide.utmSource, slide.campaignName)
+            const altText = slide.altText || ""
+            return `
+                  <a href="${linkWithUTM}" class="swiper-slide _revamp-slide" aria-label="${altText}">
+                    <div class="slide-link-re">
+                      <img
+                        src="${slide.desktopImage}"
+                        alt="${altText}"
+                        class="slide-image">
+                      <div class="image-gradient-overlay"></div>
+                      <div class="slide-content">
+                        <div class="slide-title">${altText}</div>
+                        <button class="slide-button" aria-label="${altText}">
+                          <span>Shop now</span>
+                        </button>
+                      </div>
+                    </div>
+                  </a>`
+          })
+          .join("")
+
+        return `<!-- New Banner Start -->
+<div id="main-banner-slider">
+  <div class="_slider-container">
+    <div class="_slider-inner">
+      <div class="swiper _revamp" id="${bannerId}">
+        <div class="swiper-wrapper">
+${slidesHTML}
+        </div>
+        <div class="swiper-button-next"></div>
+        <div class="swiper-button-prev"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  (function() {
+    if (typeof Swiper === "undefined") return;
+    var mainBannerSwiper = new Swiper('#${bannerId}', {
+      centeredSlides: true,
+      loop: true,
+      spaceBetween: 20,
+      autoplay: {
+        delay: 4000,
+        disableOnInteraction: false,
+      },
+      navigation: {
+        nextEl: '#main-banner-slider .swiper-button-next',
+        prevEl: '#main-banner-slider .swiper-button-prev',
+      },
+      breakpoints: {
+        1280: { slidesPerView: 3 },
+        1024: { slidesPerView: 2.6 },
+        992: { slidesPerView: 2.2 },
+        720: { slidesPerView: 2 },
+        599: { slidesPerView: 1.6 },
+        500: { slidesPerView: 1.2 },
+        0: { slidesPerView: 1 }
+      }
+    });
+  })();
+</script>
+<!-- New Banner End -->`
+      },
+    })
+
     // Four Categories Component
     this.register("four-categories", {
       name: "Four Categories",

@@ -89,6 +89,11 @@ class AssetRegistryClass {
     },
     {
       type: "css",
+      url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20%26%20Styles/NewBannerLast.css",
+      id: "new-banner-css",
+    },
+    {
+      type: "css",
       url: "https://decathlon-egypt.github.io/Decathlon-Egypt/CMS%20Scripts%20&%20Styles/info%20grid%20section.css",
       id: "info-grid-section-css",
     },
