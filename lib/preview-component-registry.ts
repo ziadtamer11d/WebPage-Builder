@@ -163,7 +163,9 @@ class PreviewComponentRegistryClass {
                       <div class="slide-content">
                         <div class="slide-title" ${subtitleStyle}>${subtitle}</div>
                         <button class="slide-button" aria-label="${altText}" ${buttonStyle}>
-                          <span>${buttonText || "Shop now"}</span>
+                          <font dir="auto" style="vertical-align: inherit;">
+                            <font dir="auto" style="vertical-align: inherit;">${buttonText || "Shop now"}</font>
+                          </font>
                         </button>
                       </div>
                     </div>
@@ -194,8 +196,58 @@ class PreviewComponentRegistryClass {
               <div class="swiper-wrapper">
 ${slidesHTML}
               </div>
-              <div class="swiper-button-next"></div>
-              <div class="swiper-button-prev"></div>
+              <style scoped>
+                #main-banner-slider .swiper-button-next,
+                #main-banner-slider .swiper-button-prev {
+                  background-color: transparent !important;
+                  background: transparent !important;
+                  border: 2px solid #ffffff !important;
+                  border-color: #ffffff !important;
+                }
+                #main-banner-slider .swiper-button-next::after,
+                #main-banner-slider .swiper-button-prev::after {
+                  display: none !important;
+                  visibility: hidden !important;
+                  opacity: 0 !important;
+                  content: "" !important;
+                  font-size: 0 !important;
+                  width: 0 !important;
+                  height: 0 !important;
+                  line-height: 0 !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                }
+                #main-banner-slider .swiper-button-next svg,
+                #main-banner-slider .swiper-button-prev svg {
+                  display: block !important;
+                  position: relative !important;
+                  z-index: 999 !important;
+                  pointer-events: none;
+                  color: #ffffff !important;
+                }
+                #main-banner-slider .swiper-button-next svg path,
+                #main-banner-slider .swiper-button-prev svg path {
+                  stroke: #ffffff !important;
+                  fill: none !important;
+                }
+              </style>
+              <script>
+                (function() {
+                  var style = document.createElement('style');
+                  style.textContent = '#main-banner-slider .swiper-button-next, #main-banner-slider .swiper-button-prev { background-color: transparent !important; background: transparent !important; border: 2px solid #ffffff !important; border-color: #ffffff !important; } #main-banner-slider .swiper-button-next::after, #main-banner-slider .swiper-button-prev::after { display: none !important; visibility: hidden !important; opacity: 0 !important; content: "" !important; font-size: 0 !important; width: 0 !important; height: 0 !important; } #main-banner-slider .swiper-button-next svg path, #main-banner-slider .swiper-button-prev svg path { stroke: #ffffff !important; fill: none !important; }';
+                  document.head.appendChild(style);
+                })();
+              </script>
+              <div class="swiper-button-next">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #ffffff;">
+                  <path d="M9 18L15 12L9 6" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+              <div class="swiper-button-prev">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="color: #ffffff;">
+                  <path d="M15 18L9 12L15 6" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
               <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
             </div>
           </div>
