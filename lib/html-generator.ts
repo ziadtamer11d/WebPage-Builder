@@ -152,7 +152,8 @@ function detectComponentType(html: string): string {
     return "swiper"
   }
   if (html.includes('class="four_categories_wrapper"') || 
-      (html.includes('four_categories_box') && html.includes('four_categories_category_wrapper'))) {
+      (html.includes('four_categories_box') && html.includes('four_categories_category_wrapper')) ||
+      (html.includes('sports-swiper-container') && html.includes('four_categories_category_wrapper'))) {
     return "four-categories"
   }
   if (html.includes('class="icons-wrapper"')) {
@@ -246,13 +247,26 @@ function extractComponentConfig(html: string, type: string): any {
       break
 
     case "four-categories":
-      const titleMatch = html.match(/<h2[^>]*>([\s\S]*?)<\/h2>/)
+      const titleMatch = html.match(/<h2[^>]*class="four_categories_title"[^>]*>([\s\S]*?)<\/h2>/)
       config.title = titleMatch ? titleMatch[1].trim() : ""
       
       const bgColorMatch = html.match(/background-color:\s*([^"'\s;]*)/)
       config.backgroundColor = bgColorMatch ? bgColorMatch[1] : ""
       
-      const categoryWrappers = html.match(/<div class="four_categories_category_wrapper">[\s\S]*?<\/div>\s*<\/div>/g) || []
+      // Try to match swiper-slide structure first (new format)
+      let categoryWrappers: string[] = []
+      const swiperSlideMatches = html.matchAll(/<div class="swiper-slide">[\s\S]*?<div class="four_categories_category_wrapper">([\s\S]*?)<\/div>\s*<\/div>\s*<\/div>/g)
+      const swiperSlides = Array.from(swiperSlideMatches)
+      
+      if (swiperSlides.length > 0) {
+        // New swiper structure
+        categoryWrappers = swiperSlides.map(match => match[1])
+      } else {
+        // Old structure - try to match four_categories_category_wrapper directly
+        const oldMatches = html.match(/<div class="four_categories_category_wrapper">[\s\S]*?<\/div>\s*<\/div>/g) || []
+        categoryWrappers = oldMatches
+      }
+      
       config.categories = categoryWrappers.map(wrapper => {
         const linkMatch = wrapper.match(/href="([^"]*)"/)
         const imgMatch = wrapper.match(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"/)
@@ -285,15 +299,7 @@ function extractComponentConfig(html: string, type: string): any {
         }
       })
 
-      while (config.categories.length < 4) {
-        config.categories.push({
-          linkUrl: "",
-          imageUrl: "",
-          altText: "",
-          utmSource: "",
-          campaignName: ""
-        })
-      }
+      // Don't pad to 4 anymore - keep all blocks as they are
       break
 
     case "eight-icons":

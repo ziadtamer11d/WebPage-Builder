@@ -317,6 +317,11 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
 
   const renderFourCategoriesSettings = () => {
     const categories = config.categories || []
+    // Ensure selectedIndex is valid
+    const validSelectedIndex = categories.length > 0 ? Math.min(selectedIndex, categories.length - 1) : 0
+    if (validSelectedIndex !== selectedIndex && categories.length > 0) {
+      setSelectedIndex(validSelectedIndex)
+    }
     return (
       <div className="flex h-full w-full">
         {/* Left Sidebar - 20% width */}
@@ -341,41 +346,70 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                   placeholder="#ffffff or white"
                 />
               </div>
+              <Button
+                onClick={() => {
+                  const newCategories = [
+                    ...categories,
+                    { linkUrl: "", imageUrl: "", altText: "", utmSource: "", campaignName: "" },
+                  ]
+                  setConfig({ ...config, categories: newCategories })
+                  setSelectedIndex(newCategories.length - 1)
+                }}
+                size="sm"
+                className="w-full"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Block
+              </Button>
             </div>
           </div>
-          <div className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <DragDropContext onDragEnd={(result) => handleDragEnd(result, "categories")}> 
               <Droppable droppableId="categories">
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef} className="p-2 h-full">
-                    {[0, 1, 2, 3].map((index) => {
-                      const category = categories[index] || { linkUrl: "", imageUrl: "", altText: "" }
-                      return (
-                        <Draggable key={`category-${index}`} draggableId={`category-${index}`} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              className={`mb-2 p-3 rounded border cursor-pointer transition-colors ${
-                                selectedIndex === index
-                                  ? "bg-blue-100 border-blue-300"
-                                  : "bg-white border-gray-200 hover:bg-gray-50"
-                              } ${snapshot.isDragging ? "shadow-lg" : ""}`}
-                              onClick={() => setSelectedIndex(index)}
-                            >
-                              <div className="flex items-center justify-between">
-                                <span className="text-sm font-medium truncate">
-                                  {category.altText || `Category ${index + 1}`}
-                                </span>
+                    {categories.map((category: any, index: number) => (
+                      <Draggable key={`category-${index}`} draggableId={`category-${index}`} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`mb-2 p-3 rounded border cursor-pointer transition-colors ${
+                              validSelectedIndex === index
+                                ? "bg-blue-100 border-blue-300"
+                                : "bg-white border-gray-200 hover:bg-gray-50"
+                            } ${snapshot.isDragging ? "shadow-lg" : ""}`}
+                            onClick={() => setSelectedIndex(index)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium truncate">
+                                {category.altText || `Block ${index + 1}`}
+                              </span>
+                              <div className="flex items-center gap-1">
                                 <div {...provided.dragHandleProps} className="cursor-grab p-1">
                                   <GripVertical className="w-3 h-3 text-gray-400" />
                                 </div>
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    const newCategories = categories.filter((_: any, i: number) => i !== index)
+                                    setConfig({ ...config, categories: newCategories })
+                                    if (selectedIndex >= newCategories.length) {
+                                      setSelectedIndex(Math.max(0, newCategories.length - 1))
+                                    }
+                                  }}
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
                               </div>
                             </div>
-                          )}
-                        </Draggable>
-                      )
-                    })}
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
                     {provided.placeholder}
                   </div>
                 )}
@@ -385,19 +419,25 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
         </div>
         {/* Right Content - 80% width */}
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-6 overflow-y-auto">
             <div className="space-y-4">
               <h3 className="text-lg font-medium">
-                Edit {categories[selectedIndex]?.altText || `Category ${selectedIndex + 1}`}
+                Edit {categories[validSelectedIndex]?.altText || `Block ${validSelectedIndex + 1}`}
               </h3>
+              {categories.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No blocks yet. Click "Add Block" to get started.</p>
+                </div>
+              ) : (
+                <>
               <div>
                 <Label htmlFor="link-url">Link URL</Label>
                 <Input
                   id="link-url"
-                  value={categories[selectedIndex]?.linkUrl || ""}
+                  value={categories[validSelectedIndex]?.linkUrl || ""}
                   onChange={(e) => {
-                    const newCategories = [...(config.categories || [{}, {}, {}, {}])]
-                    newCategories[selectedIndex] = { ...newCategories[selectedIndex], linkUrl: e.target.value }
+                    const newCategories = [...categories]
+                    newCategories[validSelectedIndex] = { ...newCategories[validSelectedIndex], linkUrl: e.target.value }
                     setConfig({ ...config, categories: newCategories })
                   }}
                   placeholder="https://example.com"
@@ -405,36 +445,36 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="utm-source">UTM Source {(categories[selectedIndex]?.utmSource || categories[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                  <Label htmlFor="utm-source">UTM Source {(categories[validSelectedIndex]?.utmSource || categories[validSelectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="utm-source"
-                    value={categories[selectedIndex]?.utmSource || ""}
+                    value={categories[validSelectedIndex]?.utmSource || ""}
                     onChange={(e) => {
-                      const newCategories = [...(config.categories || [{}, {}, {}, {}])]
-                      newCategories[selectedIndex] = { ...newCategories[selectedIndex], utmSource: e.target.value }
+                      const newCategories = [...categories]
+                      newCategories[validSelectedIndex] = { ...newCategories[validSelectedIndex], utmSource: e.target.value }
                       setConfig({ ...config, categories: newCategories })
                     }}
                     placeholder="e.g., Sports_Menu"
-                    className={(categories[selectedIndex]?.campaignName && !categories[selectedIndex]?.utmSource) ? "border-red-500" : ""}
+                    className={(categories[validSelectedIndex]?.campaignName && !categories[validSelectedIndex]?.utmSource) ? "border-red-500" : ""}
                   />
-                  {categories[selectedIndex]?.campaignName && !categories[selectedIndex]?.utmSource && (
+                  {categories[validSelectedIndex]?.campaignName && !categories[validSelectedIndex]?.utmSource && (
                     <p className="text-xs text-red-500 mt-1">Required when Campaign Name is filled</p>
                   )}
                 </div>
                 <div>
-                  <Label htmlFor="campaign-name">Campaign Name {(categories[selectedIndex]?.utmSource || categories[selectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
+                  <Label htmlFor="campaign-name">Campaign Name {(categories[validSelectedIndex]?.utmSource || categories[validSelectedIndex]?.campaignName) && <span className="text-red-500">*</span>}</Label>
                   <Input
                     id="campaign-name"
-                    value={categories[selectedIndex]?.campaignName || ""}
+                    value={categories[validSelectedIndex]?.campaignName || ""}
                     onChange={(e) => {
-                      const newCategories = [...(config.categories || [{}, {}, {}, {}])]
-                      newCategories[selectedIndex] = { ...newCategories[selectedIndex], campaignName: e.target.value }
+                      const newCategories = [...categories]
+                      newCategories[validSelectedIndex] = { ...newCategories[validSelectedIndex], campaignName: e.target.value }
                       setConfig({ ...config, categories: newCategories })
                     }}
                     placeholder="e.g., sports-menu"
-                    className={(categories[selectedIndex]?.utmSource && !categories[selectedIndex]?.campaignName) ? "border-red-500" : ""}
+                    className={(categories[validSelectedIndex]?.utmSource && !categories[validSelectedIndex]?.campaignName) ? "border-red-500" : ""}
                   />
-                  {categories[selectedIndex]?.utmSource && !categories[selectedIndex]?.campaignName && (
+                  {categories[validSelectedIndex]?.utmSource && !categories[validSelectedIndex]?.campaignName && (
                     <p className="text-xs text-red-500 mt-1">Required when UTM Source is filled</p>
                   )}
                 </div>
@@ -443,10 +483,10 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                 <Label htmlFor="image-url">Image URL</Label>
                 <Input
                   id="image-url"
-                  value={categories[selectedIndex]?.imageUrl || ""}
+                  value={categories[validSelectedIndex]?.imageUrl || ""}
                   onChange={(e) => {
-                    const newCategories = [...(config.categories || [{}, {}, {}, {}])]
-                    newCategories[selectedIndex] = { ...newCategories[selectedIndex], imageUrl: e.target.value }
+                    const newCategories = [...categories]
+                    newCategories[validSelectedIndex] = { ...newCategories[validSelectedIndex], imageUrl: e.target.value }
                     setConfig({ ...config, categories: newCategories })
                   }}
                   placeholder="https://example.com/image.jpg"
@@ -456,15 +496,17 @@ export function ComponentDialog({ component, isOpen, onClose, onSave, onSaveCode
                 <Label htmlFor="alt-text">Alt Text</Label>
                 <Input
                   id="alt-text"
-                  value={categories[selectedIndex]?.altText || ""}
+                  value={categories[validSelectedIndex]?.altText || ""}
                   onChange={(e) => {
-                    const newCategories = [...(config.categories || [{}, {}, {}, {}])]
-                    newCategories[selectedIndex] = { ...newCategories[selectedIndex], altText: e.target.value }
+                    const newCategories = [...categories]
+                    newCategories[validSelectedIndex] = { ...newCategories[validSelectedIndex], altText: e.target.value }
                     setConfig({ ...config, categories: newCategories })
                   }}
                   placeholder="Image description"
                 />
               </div>
+              </>
+              )}
             </div>
           </div>
         </div>

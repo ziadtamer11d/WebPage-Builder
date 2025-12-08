@@ -305,30 +305,39 @@ ${slidesHTML}
             (category: any) => {
               const linkWithUTM = appendUTMToURL(category.linkUrl, category.utmSource, category.campaignName)
               return `
-      <div class="four_categories_category_wrapper">
-        <div style="max-width: 100%;">
-          <a href="${linkWithUTM}">
-            <div class="four_categories_image_wrapper">
-              <img src="${category.imageUrl}" alt="${category.altText}" loading="lazy" width="432" height="467" />
-            </div>
-          </a>
-        </div>
-      </div>`
+              <div class="swiper-slide">
+                <div class="four_categories_category_wrapper">
+                  <div style="max-width: 100%;">
+                    <a href="${linkWithUTM}">
+                      <div class="four_categories_image_wrapper">
+                        <img src="${category.imageUrl}" alt="${category.altText}" loading="lazy" width="432" height="467" />
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>`
             },
           )
           .join("")
 
-        return `<div class="four_categories_wrapper" style="background-color:${config.backgroundColor};">
+        return `<!-- Sports swiper start -->
+<div class="four_categories_wrapper" style="background-color:${config.backgroundColor};">
   <div class="four_categories_title_wrapper">
     <div class="four_categories_title_container">
       <h2 class="four_categories_title">${config.title}</h2>
     </div>
   </div>
-  <div class="four_categories_container">
-    <div class="four_categories_box">${categoriesHTML}
+  <div class="showroom-products-wrapper">
+    <div class="swiper-button-prev sports-swiper-prev showroom_arrow"></div>
+    <div class="swiper-button-next sports-swiper-next showroom_arrow"></div>
+    <div class="swiper sports-swiper-container">
+      <div class="swiper-wrapper">
+${categoriesHTML}
+      </div>
     </div>
   </div>
-</div>`
+</div>
+<!-- Sports swiper end -->`
       },
     })
 
