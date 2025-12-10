@@ -345,8 +345,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
             <TabsTrigger value="other-lists">Other Lists</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-hidden mt-4">
-            <TabsContent value="store-stock" className="h-full flex flex-col">
+            <TabsContent value="store-stock" className="flex-1 overflow-y-auto mt-4">
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Input
@@ -421,7 +420,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="algolia" className="h-full flex flex-col">
+            <TabsContent value="algolia" className="flex-1 overflow-y-auto mt-4">
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Button onClick={fetchAlgoliaData} disabled={isLoading}>
@@ -446,7 +445,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="etl" className="h-full flex flex-col">
+            <TabsContent value="etl" className="flex-1 overflow-y-auto mt-4">
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Button onClick={updateInventory}>
@@ -480,7 +479,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="not-available" className="h-full flex flex-col">
+            <TabsContent value="not-available" className="flex-1 overflow-y-auto mt-4">
               <div className="space-y-4">
                 <div className="flex gap-2">
                   <Button onClick={() => exportToCSV(
@@ -517,7 +516,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="other-lists" className="h-full flex flex-col">
+            <TabsContent value="other-lists" className="flex-1 overflow-y-auto mt-4">
               <div className="space-y-6">
                 <div>
                   <Label className="text-lg font-semibold">AMI Products</Label>
@@ -613,7 +612,6 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
                 </div>
               </div>
             </TabsContent>
-          </div>
         </Tabs>
       </DialogContent>
     </Dialog>
