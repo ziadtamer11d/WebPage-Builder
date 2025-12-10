@@ -336,7 +336,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
           <DialogTitle>Inventory Management</DialogTitle>
         </DialogHeader>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="store-stock">Store Stock</TabsTrigger>
             <TabsTrigger value="algolia">Algolia Records</TabsTrigger>
@@ -345,8 +345,8 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
             <TabsTrigger value="other-lists">Other Lists</TabsTrigger>
           </TabsList>
 
-            <TabsContent value="store-stock" className="flex-1 overflow-y-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="store-stock" className="flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4">
                 <div className="flex gap-2">
                   <Input
                     type="file"
@@ -420,8 +420,8 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="algolia" className="flex-1 overflow-y-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="algolia" className="flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4">
                 <div className="flex gap-2">
                   <Button onClick={fetchAlgoliaData} disabled={isLoading}>
                     <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? "animate-spin" : ""}`} />
@@ -445,8 +445,8 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="etl" className="flex-1 overflow-y-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="etl" className="flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4">
                 <div className="flex gap-2">
                   <Button onClick={updateInventory}>
                     <RefreshCw className="w-4 h-4 mr-2" />
@@ -479,8 +479,8 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="not-available" className="flex-1 overflow-y-auto mt-4">
-              <div className="space-y-4">
+            <TabsContent value="not-available" className="flex-1 overflow-y-auto">
+              <div className="space-y-4 p-4">
                 <div className="flex gap-2">
                   <Button onClick={() => exportToCSV(
                     inventoryData.notAvailableOnline.map(item => [item.modelCode, item.status, item.stock]),
@@ -516,8 +516,8 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
               </div>
             </TabsContent>
 
-            <TabsContent value="other-lists" className="flex-1 overflow-y-auto mt-4">
-              <div className="space-y-6">
+            <TabsContent value="other-lists" className="flex-1 overflow-y-auto">
+              <div className="space-y-6 p-4">
                 <div>
                   <Label className="text-lg font-semibold">AMI Products</Label>
                   <div className="flex gap-2 mt-2">
