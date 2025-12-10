@@ -16,6 +16,7 @@ import type { Component } from "@/types/component"
 import type { Settings } from "@/types/settings"
 import { ShowroomSettingsDialog } from "@/components/showroom-settings-dialog"
 import { ModelConverterDialog } from "@/components/model-converter-dialog"
+import { InventoryManagementDialog } from "@/components/inventory-management-dialog"
 import Cookies from "js-cookie"
 import { settingsModel } from "@/lib/settings-model"
 
@@ -41,6 +42,7 @@ export default function WebPageBuilder() {
   const [showMobileTutorial, setShowMobileTutorial] = useState(false)
   const [showAssetsDialog, setShowAssetsDialog] = useState(false)
   const [showModelConverter, setShowModelConverter] = useState(false)
+  const [showInventoryManagement, setShowInventoryManagement] = useState(false)
   const [copiedCode, setCopiedCode] = useState(false)
   const [expandedComponents, setExpandedComponents] = useState<Set<string>>(new Set())
   const [hasSettings, setHasSettings] = useState(false)
@@ -514,6 +516,10 @@ export default function WebPageBuilder() {
             <Code className="w-3 h-3 mr-1" />
             <span className="hidden sm:inline">Model Converter</span>
           </Button>
+          <Button onClick={() => setShowInventoryManagement(true)} size="sm" variant="outline" className="w-full h-8 text-xs bg-green-50 hover:bg-green-100 border-green-300">
+            <FileText className="w-3 h-3 mr-1" />
+            <span className="hidden sm:inline">Inventory</span>
+          </Button>
         </div>
       </div>
 
@@ -605,6 +611,11 @@ export default function WebPageBuilder() {
       <ModelConverterDialog
         isOpen={showModelConverter}
         onClose={() => setShowModelConverter(false)}
+      />
+
+      <InventoryManagementDialog
+        isOpen={showInventoryManagement}
+        onClose={() => setShowInventoryManagement(false)}
       />
 
       <style jsx global>{`
