@@ -337,7 +337,7 @@ export function InventoryManagementDialog({ isOpen, onClose }: { isOpen: boolean
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-5 mb-4">
             <TabsTrigger value="store-stock">Store Stock</TabsTrigger>
             <TabsTrigger value="algolia">Algolia Records</TabsTrigger>
             <TabsTrigger value="etl">ETL List</TabsTrigger>
